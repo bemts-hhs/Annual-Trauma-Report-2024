@@ -1,0 +1,23 @@
+# trauma data
+trauma_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/trauma_2024.csv"
+
+# ems data
+ems_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/EMS_data_2024.csv"
+
+# IPOP data
+ipop_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/Query Output Foss 20250723.xlsx"
+
+# mechanism / injury mapping
+mech_injury_map="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Desktop/Analytics/Analytics Builds/GitHub/Reference-Files/icd10cm_injury_poisoning_nonpoisoning_2025.csv"
+
+# icd-10 injury diagnosis matrix
+injury_matrix="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Desktop/Analytics/Analytics Builds/GitHub/Reference-Files/icd10_diagnosis_matrix_custom.xlsx"
+
+# counties and districts
+iowa_counties_districts="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Desktop/Analytics/Analytics Builds/GitHub/Reference-Files/IA Counties, Regions.xlsx"
+
+# Iowa state populations
+IOWA_COUNTY_POPS="https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/totals/co-est2024-alldata.csv"
+IOWA_COUNTY_AGE_POPS="https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/asrh/cc-est2024-agesex-19.csv"
+US_STANDARD_POPS="https://seer.cancer.gov/stdpopulations/stdpop.18ages.txt"
+IOWA_STATE_POPS="https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/state/asrh/sc-est2024-agesex-civ.csv"
