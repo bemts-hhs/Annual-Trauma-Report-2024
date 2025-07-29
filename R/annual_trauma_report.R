@@ -20,228 +20,13 @@
 ###_____________________________________________________________________________
 
 ###_____________________________________________________________________________
-# Pull in files ----
-###_____________________________________________________________________________
-
-# trauma data
-
-trauma_data <- read_csv(
-  "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2023/data/trauma_all.csv"
-)
-
-# deal with missing values in cause of injury categories
-
-trauma_data_clean <- {
-  trauma_data |>
-    mutate(
-      Age_Group = case_when(
-        Patient_Age_Years < 5 ~ "0-4",
-        Patient_Age_Years >= 5 & Patient_Age_Years < 10 ~ "5-9",
-        Patient_Age_Years >= 10 & Patient_Age_Years < 15 ~ "10-14",
-        Patient_Age_Years >= 15 & Patient_Age_Years < 20 ~ "15-19",
-        Patient_Age_Years >= 20 & Patient_Age_Years < 25 ~ "20-24",
-        Patient_Age_Years >= 25 & Patient_Age_Years < 30 ~ "25-29",
-        Patient_Age_Years >= 30 & Patient_Age_Years < 35 ~ "30-34",
-        Patient_Age_Years >= 35 & Patient_Age_Years < 40 ~ "35-39",
-        Patient_Age_Years >= 40 & Patient_Age_Years < 45 ~ "40-44",
-        Patient_Age_Years >= 45 & Patient_Age_Years < 50 ~ "45-49",
-        Patient_Age_Years >= 50 & Patient_Age_Years < 55 ~ "50-54",
-        Patient_Age_Years >= 55 & Patient_Age_Years < 60 ~ "55-59",
-        Patient_Age_Years >= 60 & Patient_Age_Years < 65 ~ "60-64",
-        Patient_Age_Years >= 65 & Patient_Age_Years < 70 ~ "65-69",
-        Patient_Age_Years >= 70 & Patient_Age_Years < 75 ~ "70-74",
-        Patient_Age_Years >= 75 & Patient_Age_Years < 80 ~ "75-79",
-        Patient_Age_Years >= 80 & Patient_Age_Years < 85 ~ "80-84",
-        Patient_Age_Years >= 85 ~ "85+",
-        TRUE ~ "Missing",
-        .default = "Missing"
-      ),
-      Age_Group = factor(
-        Age_Group,
-        levels = c(
-          "0-4",
-          "5-9",
-          "10-14",
-          "15-19",
-          "20-24",
-          "25-29",
-          "30-34",
-          "35-39",
-          "40-44",
-          "45-49",
-          "50-54",
-          "55-59",
-          "60-64",
-          "65-69",
-          "70-74",
-          "75-79",
-          "80-84",
-          "85+",
-          "Missing"
-        )
-      ),
-      .after = Age_Range
-    ) |>
-    mutate(
-      Injury_County = str_to_title(Injury_County),
-      Injury_County = if_else(
-        grepl(pattern = "o'b", x = Injury_County, ignore.case = T),
-        "O'Brien",
-        Injury_County
-      ),
-      NATURE_OF_INJURY_DESCRIPTOR_1 = if_else(
-        is.na(NATURE_OF_INJURY_DESCRIPTOR_1),
-        NATURE_OF_INJURY_DESCRIPTOR_2,
-        NATURE_OF_INJURY_DESCRIPTOR_1
-      ),
-      BODY_REGION_CATEGORY_LEVEL_1_1 = if_else(
-        is.na(BODY_REGION_CATEGORY_LEVEL_1_1),
-        BODY_REGION_CATEGORY_LEVEL_1_2,
-        BODY_REGION_CATEGORY_LEVEL_1_1
-      ),
-      BODY_REGION_CATEGORY_LEVEL_2_1 = if_else(
-        is.na(BODY_REGION_CATEGORY_LEVEL_2_1),
-        BODY_REGION_CATEGORY_LEVEL_2_2,
-        BODY_REGION_CATEGORY_LEVEL_2_1
-      ),
-      BODY_REGION_CATEGORY_LEVEL_3_1 = if_else(
-        is.na(BODY_REGION_CATEGORY_LEVEL_3_1),
-        BODY_REGION_CATEGORY_LEVEL_3_2,
-        BODY_REGION_CATEGORY_LEVEL_3_1
-      ),
-      INTENTIONALITY_1 = if_else(
-        is.na(INTENTIONALITY_1),
-        INTENTIONALITY_2,
-        INTENTIONALITY_1
-      ),
-      MECHANISM_1 = if_else(is.na(MECHANISM_1), MECHANISM_2, MECHANISM_1),
-      LEVEL_FALL1_1 = if_else(
-        is.na(LEVEL_FALL1_1),
-        LEVEL_FALL1_2,
-        LEVEL_FALL1_1
-      ),
-      CAUSE_OF_INJURY_AR_1 = if_else(
-        is.na(CAUSE_OF_INJURY_AR_1),
-        CAUSE_OF_INJURY_AR_2,
-        CAUSE_OF_INJURY_AR_1
-      )
-    ) |>
-    left_join(location_data, by = c("Patient_County" = "County")) |>
-    rename(
-      Designation_Patient = Designation,
-      Urbanicity_Patient = Urbanicity
-    ) |>
-    relocate(
-      all_of(c("Designation_Patient", "Urbanicity_Patient")),
-      .after = Patient_County
-    ) |>
-    left_join(location_data, by = c("Injury_County" = "County")) |>
-    rename(Designation_Injury = Designation, Urbanicity_Injury = Urbanicity) |>
-    relocate(
-      all_of(c("Designation_Injury", "Urbanicity_Injury")),
-      .after = Injury_County
-    ) |>
-    left_join(location_data, by = "County") |>
-    relocate(all_of(c("Designation", "Urbanicity")), .after = County)
-}
-
-# filter for the year of interest
-trauma_2023 <- trauma_data_clean |>
-  dplyr::filter(Year == 2023)
-
-# ems data
-
-ems_data <- read_csv(
-  "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2023/data/ems_data.csv"
-)
-
-# deal with missing injury categories
-ems_data_clean <- ems_data |>
-  mutate(Injury_1 = if_else(is.na(Injury_1), Injury_2, Injury_1))
-
-# filter down to the year of interest
-ems_2023 <- ems_data |>
-  dplyr::filter(Year == 2023)
-
-# ipop data import
-
-ipop_data <- read_csv(
-  "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2023/data/ipop_check.csv"
-)
-
-# clean ipop data
-
-{
-  ipop_data_clean <- ipop_data |>
-    mutate(
-      Census_Age_Group = factor(
-        Census_Age_Group,
-        levels = c(
-          "0 to 4",
-          "5 to 9",
-          "10 to 14",
-          "15 to 19",
-          "20 to 24",
-          "25 to 29",
-          "30 to 34",
-          "35 to 39",
-          "40 to 44",
-          "45 to 49",
-          "50 to 54",
-          "55 to 59",
-          "60 to 64",
-          "65 to 69",
-          "70 to 74",
-          "75 to 79",
-          "80 to 84",
-          "85 And Over"
-        ),
-        labels = c(
-          "0-4",
-          "5-9",
-          "10-14",
-          "15-19",
-          "20-24",
-          "25-29",
-          "30-34",
-          "35-39",
-          "40-44",
-          "45-49",
-          "50-54",
-          "55-59",
-          "60-64",
-          "65-69",
-          "70-74",
-          "75-79",
-          "80-84",
-          "85+"
-        )
-      )
-    ) |>
-    mutate(
-      ICD_10_CODE_TRIM = if_else(
-        str_detect(Diagnosis_ICD10_Raw, pattern = "[:alpha:]\\d{2}\\d{1}"),
-        str_extract(Diagnosis_ICD10_Raw, pattern = "[:alpha:]\\d{2}\\d{1}"),
-        str_extract(
-          Diagnosis_ICD10_Raw,
-          pattern = "[:alpha:]\\d{2}[:alpha:]{1}[\\d{1}]?"
-        )
-      ),
-      ICD_10_CODE_TRIM = str_squish(ICD_10_CODE_TRIM),
-      .before = Diagnosis_ICD10_Raw
-    ) |>
-    left_join(nature_injury_mapping, by = "ICD_10_CODE_TRIM")
-}
-
-###_____________________________________________________________________________
-# Approximate age adjusted rates of injury prevalence resulting in inpatient hospitalization ----
+# Estimate age adjusted rates of injury prevalence resulting in inpatient hospitalization ----
 # based on the trauma registry
 ###_____________________________________________________________________________
 
 # total trauma cases
 
 trauma_cases_years <- trauma_data_clean |>
-  dplyr::filter(Year < 2024) |>
   injury_case_count(Year)
 
 # check overall trauma case counts with injury location of Iowa
@@ -250,7 +35,7 @@ trauma_years_iowa <- trauma_data_clean |>
   dplyr::filter(
     grepl(pattern = "^ia$|iowa", x = Injury_State, ignore.case = T),
     !is.na(Injury_County),
-    Injury_County %not_in%
+    !Injury_County %in%
       c(
         "Not Applicable",
         "Not Known",
@@ -259,7 +44,6 @@ trauma_years_iowa <- trauma_data_clean |>
         "Rock Island"
       )
   ) |>
-  dplyr::filter(Year < 2024) |>
   injury_case_count(Year) # close to the annual trauma report, but is a different file if not filtering out non-Iowa incidents
 
 # get injury counts and case counts by year, county, and age group
@@ -268,10 +52,9 @@ trauma_years_iowa <- trauma_data_clean |>
   # injuries
   injury_counts <- trauma_data_clean |>
     dplyr::filter(
-      Year < 2024,
       grepl(pattern = "^ia$|iowa", x = Injury_State, ignore.case = T),
       !is.na(Injury_County),
-      Injury_County %not_in%
+      !Injury_County %in%
         c(
           "Not Applicable",
           "Not Known",
@@ -283,40 +66,31 @@ trauma_years_iowa <- trauma_data_clean |>
     # it seems that registrars may enter incident_state as the state the patient is from
     # observed Iowa counties paired with other states, which is improbable that it was meant as the county of another state
     injury_incident_count(Year, Injury_County, Age_Group) |> # as the states in this dataset seem to have a very, very good spelling match with Iowa county names, so assumption is county and zip code are better sources
-    complete(Year, Injury_County, Age_Group, fill = list(n = 0L)) |>
-    arrange(Year, Injury_County, Age_Group) |> # returns 99 counties, and more accurate counts
-    left_join(
-      age_group_pops,
+    tidyr::complete(Year, Injury_County, Age_Group, fill = list(n = 0L)) |>
+    dplyr::arrange(Year, Injury_County, Age_Group) |> # returns 99 counties, and more accurate counts
+    dplyr::left_join(
+      age_group_pops_final,
       by = c("Injury_County" = "County", "Age_Group", "Year")
     ) |>
-    rename(Count = n, Stratified_Population = Population) |>
+    dplyr::rename(Count = n) |>
     dplyr::filter(Age_Group != "Missing") |>
-    mutate(
-      Crude_Rate = round(Count / Stratified_Population, digits = 6),
-      .after = County_Population
-    ) |>
-    left_join(us_age_pops_clean, by = "Age_Group") |>
-    mutate(Adjusted_Rate_Component = round(Crude_Rate * Weight, digits = 6)) |>
-    mutate(Rate_Type = "Injury_Count")
+    dplyr::left_join(us_age_pops_clean, by = "Age_Group") |>
+    dplyr::mutate(Rate_Type = "Injury_Count")
 
   # cases
   # often mentioned as 'incidents'
-
   case_counts <- trauma_data_clean |>
-    dplyr::filter(Year < 2024) |>
     injury_case_count(Year, County, Age_Group) |>
-    complete(Year, County, Age_Group, fill = list(n = 0L)) |>
-    arrange(Year, County, Age_Group) |> # returns 99 counties, and more accurate counts
-    left_join(age_group_pops, by = c("County", "Age_Group", "Year")) |>
-    rename(Count = n, Stratified_Population = Population) |>
-    dplyr::filter(Age_Group != "Missing") |>
-    mutate(
-      Crude_Rate = round(Count / Stratified_Population, digits = 6),
-      .after = County_Population
+    tidyr::complete(Year, County, Age_Group, fill = list(n = 0L)) |>
+    dplyr::arrange(Year, County, Age_Group) |> # returns 99 counties, and more accurate counts
+    dplyr::left_join(
+      age_group_pops_final,
+      by = c("County", "Age_Group", "Year")
     ) |>
-    left_join(us_age_pops_clean, by = "Age_Group") |>
-    mutate(Adjusted_Rate_Component = round(Crude_Rate * Weight, digits = 6)) |>
-    mutate(Rate_Type = "case_Count")
+    dplyr::rename(Count = n) |>
+    dplyr::filter(Age_Group != "Missing") |>
+    dplyr::left_join(us_age_pops_clean, by = "Age_Group") |>
+    dplyr::mutate(Rate_Type = "Case_Count")
 }
 
 # get injury counts and case counts by year and age group
@@ -325,10 +99,9 @@ trauma_years_iowa <- trauma_data_clean |>
   # injury counts by age group
   iowa_injury_counts_age <- trauma_data_clean |>
     dplyr::filter(
-      Year < 2024,
       grepl(pattern = "^ia$|iowa", x = Injury_State, ignore.case = T),
       !is.na(Injury_County),
-      Injury_County %not_in%
+      !Injury_County %in%
         c(
           "Not Applicable",
           "Not Known",
@@ -341,42 +114,29 @@ trauma_years_iowa <- trauma_data_clean |>
     # observed Iowa counties paired with other states, which is improbable that it was meant as the county of another state
     # as the states in this dataset seem to have a very, very good spelling match with Iowa county names, so assumption is county and zip code are better sources
     injury_incident_count(Year, Age_Group) |>
-    complete(Year, Age_Group, fill = list(n = 0L)) |>
-    arrange(Year, Age_Group) |> # returns 99 counties, and more accurate counts
+    tidyr::complete(Year, Age_Group, fill = list(n = 0L)) |>
+    dplyr::arrange(Year, Age_Group) |> # returns 99 counties, and more accurate counts
     dplyr::filter(Age_Group != "Missing") |>
-    left_join(state_age_group_pops, by = c("Age_Group", "Year")) |>
-    left_join(
+    dplyr::left_join(state_age_group_pops, by = c("Age_Group", "Year")) |>
+    dplyr::left_join(
       us_age_pops_clean,
-      by = "Age_Group",
-      suffix = c("_state", "_standard")
+      by = "Age_Group"
     ) |>
-    rename(Count = n) |>
-    mutate(
-      Crude_Rate = round(Count / Population_state, digits = 6),
-      .after = Population_state
-    ) |>
-    mutate(Adjusted_Rate_Component = round(Crude_Rate * Weight, digits = 6))
+    dplyr::rename(Count = n)
 
   # get case counts
 
   iowa_case_counts_age <- trauma_data_clean |>
-    dplyr::filter(Year < 2024) |>
     injury_case_count(Year, Age_Group) |>
-    complete(Year, Age_Group, fill = list(n = 0L)) |>
-    arrange(Year, Age_Group) |> # returns 99 counties, and more accurate counts
+    tidyr::complete(Year, Age_Group, fill = list(n = 0L)) |>
+    dplyr::arrange(Year, Age_Group) |> # returns 99 counties, and more accurate counts
     dplyr::filter(Age_Group != "Missing") |>
-    left_join(state_age_group_pops, by = c("Age_Group", "Year")) |>
-    left_join(
+    dplyr::left_join(age_group_pops_final, by = c("Age_Group", "Year")) |>
+    dplyr::left_join(
       us_age_pops_clean,
-      by = "Age_Group",
-      suffix = c("_state", "_standard")
+      by = "Age_Group"
     ) |>
-    rename(Count = n) |>
-    mutate(
-      Crude_Rate = round(Count / Population_state, digits = 6),
-      .after = Population_state
-    ) |>
-    mutate(Adjusted_Rate_Component = round(Crude_Rate * Weight, digits = 6))
+    dplyr::rename(Count = n)
 }
 
 # check for missingness
@@ -384,20 +144,17 @@ trauma_years_iowa <- trauma_data_clean |>
 # go back to the trauma_data_final file and
 # review the DOB / Incident dates to see what is driving
 # the missingness
-
 trauma_counts_na <- injury_counts |>
-  dplyr::filter(if_any(everything(), ~ is.na(.)))
+  dplyr::filter(dplyr::if_any(tidyselect::everything(), ~ is.na(.)))
 
 # check the trauma_data_final file for missing DOB / Incident_Date
-
 trauma_data_na <- trauma_data_clean |>
-  dplyr::filter(if_any(c(Patient_DOB, Incident_Date), ~ is.na(.)))
+  dplyr::filter(dplyr::if_any(c(Patient_DOB, Incident_Date), ~ is.na(.)))
 
 # run this to get a big picture of where the NAs are at and if it seems to be truly unusual before
-
 trauma_data_clean |>
-  distinct(Unique_Incident_ID, .keep_all = T) |>
-  count(Year, Age_Group) |>
+  dplyr::distinct(Unique_Incident_ID, .keep_all = T) |>
+  dplyr::count(Year, Age_Group) |>
   dplyr::filter(Age_Group == "Missing") |>
   print(n = Inf)
 
@@ -410,69 +167,41 @@ trauma_data_clean |>
 {
   # injuries
   injury_rates <- injury_counts |>
-    summarize(
-      Count = sum(Count, na.rm = T),
-      Rate_Category = "Injury_Count",
-      Crude_Rate = round(
-        (sum(Count, na.rm = T) / sum(Stratified_Population, na.rm = T)) *
-          100000,
-        digits = 1
-      ),
-      Age_Adj_Injury_Rate = round(
-        sum(Adjusted_Rate_Component, na.rm = TRUE) * 100000,
-        digits = 1
-      ),
-      County_Population = min(County_Population, na.rm = T),
-      .by = c(Year, Injury_County)
+    calc_age_adjusted_rate(
+      count = Count,
+      local_population = County_Age_Population,
+      standard_population_weight = Weight,
+      .by = c("Year", "Injury_County", "Rate_Type")
     ) |>
-    left_join(
-      location_data |> dplyr::select(County, Designation, Urbanicity),
-      by = c("Injury_County" = "County")
-    ) |>
-    mutate(
-      pretty_label = if_else(
-        Year %in% c(2018, 2022, 2023),
-        pretty_number(x = Age_Adj_Injury_Rate, n_decimal = 1),
-        ""
+    dplyr::mutate(
+      pretty_label = traumar::pretty_number(
+        x = Age_Adjusted_Rate,
+        n_decimal = 2
       ),
       .by = Injury_County
     )
 
   # cases / incidents
   case_rates <- case_counts |>
-    summarize(
-      Count = sum(Count, na.rm = T),
-      Rate_Category = "case_Count",
-      Crude_Rate = round(
-        (sum(Count, na.rm = T) / sum(Stratified_Population, na.rm = T)) *
-          100000,
-        digits = 1
-      ),
-      Age_Adj_Trauma_case_Rate = round(
-        sum(Adjusted_Rate_Component, na.rm = TRUE) * 100000,
-        digits = 1
-      ),
-      County_Population = min(County_Population, na.rm = T),
-      .by = c(Year, County)
+    calc_age_adjusted_rate(
+      count = Count,
+      local_population = County_Age_Population,
+      standard_population_weight = Weight,
+      .by = c("Year", "County", "Rate_Type")
     ) |>
-    left_join(
-      location_data |> dplyr::select(County, Designation, Urbanicity),
-      by = "County"
-    ) |>
-    mutate(
-      pretty_label = if_else(
-        Year %in% c(2018, 2022, 2023),
-        pretty_number(x = Age_Adj_Trauma_case_Rate, n_decimal = 1),
-        ""
+    dplyr::mutate(
+      pretty_label = traumar::pretty_number(
+        x = Age_Adjusted_Rate,
+        n_decimal = 2
       ),
       .by = County
     )
 
   # union the by year and county age adjusted rates
 
-  injury_case_rates <- bind_rows(
-    injury_rates |> rename(Age_Adj_Rate = Age_Adj_Injury_Rate),
-    case_rates |> rename(Age_Adj_Rate = Age_Adj_Trauma_case_Rate)
+  injury_case_rates <- dplyr::bind_rows(
+    injury_rates |> dplyr::rename(County = Injury_County),
+    case_rates
   )
 }
 
