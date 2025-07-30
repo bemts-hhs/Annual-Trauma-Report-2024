@@ -29,3 +29,7 @@ IOWA_COUNTY_POPS="https://www2.census.gov/programs-surveys/popest/datasets/2020-
 IOWA_COUNTY_AGE_POPS="https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/asrh/cc-est2024-agesex-19.csv"
 US_STANDARD_POPS="https://seer.cancer.gov/stdpopulations/stdpop.18ages.txt"
 IOWA_STATE_POPS="https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/state/asrh/sc-est2024-agesex-civ.csv"
+
+# output folder locations
+plot_path="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/plots"
+output_path="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/output"

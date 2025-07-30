@@ -6,6 +6,10 @@
 
 ### Get environment variables ----
 
+# paths for outputs
+plot_folder <- Sys.getenv("plot_path")
+output_folder <- Sys.getenv("output_path")
+
 # clinical data
 
 # trauma

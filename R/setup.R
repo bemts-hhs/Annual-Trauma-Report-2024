@@ -22,7 +22,8 @@
 #   'traumar',
 #   'nemsqar',
 #   'naniar',
-#   'cli'
+#   'cli',
+#   'ggrepel'
 # ))
 
 ###_____________________________________________________________________________
@@ -31,7 +32,7 @@
 
 # easy to access list of qualitative palettes
 good_palettes <- paletteer::palettes_d_names |>
-  dplyr::filter(grepl(pattern = "blind", x = package, ignore.case = T)) |>
+  dplyr::filter(grepl(pattern = "blind", x = package, ignore.case = TRUE)) |>
   dplyr::arrange(package, desc(length))
 
 # palettes for continuous data
@@ -48,7 +49,7 @@ quant_palettes <- paletteer::palettes_c_names
     df,
     ...,
     which = c("Inpatient", "Outpatient", "IPOP"),
-    descriptive_stats = F
+    descriptive_stats = FALSE
   ) {
     # where ... will always be one bare column name.  The function will fail with more than one grouping at this time
 
@@ -111,7 +112,7 @@ quant_palettes <- paletteer::palettes_c_names
     df,
     ...,
     which = c("Inpatient", "Outpatient", "IPOP"),
-    descriptive_stats = F
+    descriptive_stats = FALSE
   ) {
     # where ... will always be one bare column name.  The function will fail with more than one grouping at this time
 
@@ -193,7 +194,7 @@ quant_palettes <- paletteer::palettes_c_names
     df,
     ...,
     which = c("Inpatient", "Outpatient", "IPOP"),
-    descriptive_stats = F
+    descriptive_stats = FALSE
   ) {
     # where ... will always be one bare column name.  The function will fail with more than one grouping at this time
 
@@ -261,7 +262,7 @@ quant_palettes <- paletteer::palettes_c_names
   # custom function to get unique count of cases from Patient Registry
   # synonymous with "incident count" from the past
 
-  injury_case_count <- function(df, ..., descriptive_stats = F) {
+  injury_case_count <- function(df, ..., descriptive_stats = FALSE) {
     # set up a temp file so dplyr::distinct() does not have to be ran more than once
     # this function will get the distinct rows based on Unique Incident ID,
     # which is equal to # of inpatient visits overall
@@ -271,7 +272,7 @@ quant_palettes <- paletteer::palettes_c_names
     temp <- df |>
       dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE)
 
-    if (descriptive_stats == F) {
+    if (descriptive_stats == FALSE) {
       # provide only the counts, user can define grouping based on dynamic dots
 
       out <- temp |>
@@ -282,7 +283,7 @@ quant_palettes <- paletteer::palettes_c_names
       )
 
       return(out)
-    } else if (descriptive_stats == T) {
+    } else if (descriptive_stats == TRUE) {
       # provide descriptive statistics about % change and # change
       # count based on user input, user can define grouping based on dynamic dots
 
@@ -308,7 +309,7 @@ quant_palettes <- paletteer::palettes_c_names
   # custom function to get unique count of injuries in Patient Registry
   # a true estimation of the number of incidents
 
-  injury_incident_count <- function(df, ..., descriptive_stats = F) {
+  injury_incident_count <- function(df, ..., descriptive_stats = FALSE) {
     # set up a temp file so dplyr::distinct() does not have to be ran more than once
     # this function will get the distinct rows based on unique combination of
     # Unique Patient ID and Incident Dates, which gets down to # of unique injury
@@ -319,7 +320,7 @@ quant_palettes <- paletteer::palettes_c_names
     temp <- df |>
       dplyr::distinct(Incident_Date, Unique_Patient_ID, .keep_all = TRUE)
 
-    if (descriptive_stats == F) {
+    if (descriptive_stats == FALSE) {
       out <- temp |>
         dplyr::count(...)
 
@@ -328,22 +329,22 @@ quant_palettes <- paletteer::palettes_c_names
       )
 
       return(out)
-    } else if (descriptive_stats == T) {
+    } else if (descriptive_stats == TRUE) {
       # provide descriptive statistics along with injury event counts
 
       stat <- temp |>
         dplyr::filter(!is.na(Unique_Patient_ID)) |>
-        dplyr::count(Year, Unique_Patient_ID) |>
+        dplyr::count(...) |>
         dplyr::filter(n > 1) |>
         dplyr::summarize(
-          Min_Reinjury = min(n, na.rm = T),
-          Max_Reinjury = max(n, na.rm = T),
-          Avg_Injuries = mean(n, na.rm = T),
-          .by = Year
+          Min_Reinjury = min(n, na.rm = TRUE),
+          Max_Reinjury = max(n, na.rm = TRUE),
+          Avg_Injuries = mean(n, na.rm = TRUE),
+          .by = ...
         )
 
       out <- temp |>
-        dplyr::count(Year) |>
+        dplyr::count(...) |>
         dplyr::mutate(
           change = n - dplyr::lag(n),
           prop_change = (n - dplyr::lag(n)) / dplyr::lag(n),
@@ -352,7 +353,7 @@ quant_palettes <- paletteer::palettes_c_names
             n_decimal = 2
           )
         ) |>
-        dplyr::left_join(stat, by = "Year")
+        dplyr::left_join(stat, by = ...)
 
       cli::cli_alert_success(
         "Returning the count(s) of total unique injury events leading to a trauma center visit and descriptive statistics."
@@ -368,7 +369,7 @@ quant_palettes <- paletteer::palettes_c_names
   # this function runs by grouping first using group_by() and then running the dplyr::distinct() function
   # running the count grouped by the column supplied, usually Year
 
-  injury_patient_count <- function(df, ..., descriptive_stats = F) {
+  injury_patient_count <- function(df, ..., descriptive_stats = FALSE) {
     # set up a temp file so dplyr::distinct() does not have to be ran more than once
     # this function will get the distinct rows based on Unique Patient ID,
     # which gets down to # of unique patients who were served at a trauma center
@@ -379,11 +380,11 @@ quant_palettes <- paletteer::palettes_c_names
 
     temp <- df |>
       dplyr::filter(!is.na(Unique_Patient_ID)) |>
-      dplyr::group_by(Year) |>
+      dplyr::group_by(...) |>
       dplyr::distinct(Unique_Patient_ID, .keep_all = TRUE) |>
       ungroup()
 
-    if (descriptive_stats == F) {
+    if (descriptive_stats == FALSE) {
       out <- temp |>
         dplyr::count(...)
 
@@ -392,7 +393,7 @@ quant_palettes <- paletteer::palettes_c_names
       )
 
       return(out)
-    } else if (descriptive_stats == T) {
+    } else if (descriptive_stats == TRUE) {
       # get descriptive statistics related to # change and % change in patient counts
       # in addition to unique patient counts per year
 
@@ -419,7 +420,7 @@ quant_palettes <- paletteer::palettes_c_names
   # reinjured is the same as n_injury > 1 per year per patient
   # a true estimation of the number of incidents
 
-  reinjury_patient_count <- function(df, descriptive_stats = F) {
+  reinjury_patient_count <- function(df, descriptive_stats = FALSE) {
     # get unique count of patients that had more than 1 injury in any given year
     # table is made distinct by Unique Patient ID and Incident date to get unique
     # injury events and see patients that had more than 1 injury in the year
@@ -440,28 +441,34 @@ quant_palettes <- paletteer::palettes_c_names
     summary <- temp |>
       dplyr::filter(n > 1) |>
       dplyr::summarize(
-        Min_Reinjury = min(n, na.rm = T),
-        Max_Reinjury = max(n, na.rm = T),
-        Avg_Injuries = mean(n, na.rm = T),
+        Min_Reinjury = min(n, na.rm = TRUE),
+        Max_Reinjury = max(n, na.rm = TRUE),
+        Avg_Injuries = mean(n, na.rm = TRUE),
         .by = Year
       )
 
-    if (descriptive_stats == F) {
+    if (descriptive_stats == FALSE) {
       # count cases where reinjury == TRUE which gives count of unique patients
       # this works because the table at this point is unique patients each year
       # and their corresponding # of injury events in that year
 
       out <- temp |>
-        dplyr::summarize(Reinjury = sum(reinjury == T, na.rm = T), .by = Year)
+        dplyr::summarize(
+          Reinjury = sum(reinjury == TRUE, na.rm = TRUE),
+          .by = Year
+        )
 
       cli::cli_alert_success(
         "Returning count(s) of injured patients that had more than 1 injury event in a given year, and have a non-null unique identifier."
       )
 
       return(out)
-    } else if (descriptive_stats == T) {
+    } else if (descriptive_stats == TRUE) {
       stat <- temp |>
-        dplyr::summarize(Reinjury = sum(reinjury == T, na.rm = T), .by = Year)
+        dplyr::summarize(
+          Reinjury = sum(reinjury == TRUE, na.rm = TRUE),
+          .by = Year
+        )
 
       counts <- df |>
         dplyr::count(Year) # get total patients for the years, including patients that were or were not reinjured
@@ -493,7 +500,7 @@ quant_palettes <- paletteer::palettes_c_names
     }
   }
 
-  reinjury_case_count <- function(df, descriptive_stats = F) {
+  reinjury_case_count <- function(df, descriptive_stats = FALSE) {
     ###
     # these first actions are done so that they do not have to be done
     # more than once before the for() loop
@@ -517,12 +524,12 @@ quant_palettes <- paletteer::palettes_c_names
         reinjured_patients,
         by = c("Year", "Unique_Patient_ID")
       ) |>
-      dplyr::distinct(Unique_Incident_ID, .keep_all = T)
+      dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE)
 
-    if (descriptive_stats == F) {
+    if (descriptive_stats == FALSE) {
       # count of reinjured patient cases per year
       out <- temp |>
-        dplyr::filter(reinjury == T) |>
+        dplyr::filter(reinjury == TRUE) |>
         dplyr::count(Year)
 
       cli::cli_alert_success(
@@ -530,24 +537,24 @@ quant_palettes <- paletteer::palettes_c_names
       )
 
       return(out)
-    } else if (descriptive_stats == T) {
+    } else if (descriptive_stats == TRUE) {
       counts <- temp |>
         dplyr::filter(
-          reinjury == T, # only records involving a reinjured patient
+          reinjury == TRUE, # only records involving a reinjured patient
           !is.na(Unique_Patient_ID) # remove records missing unique patient identifier to get accurate descriptive stats
         ) |>
         dplyr::count(Year, Unique_Patient_ID) |> # get unique case counts among reinjured patients
         dplyr::filter(n > 1) |>
         dplyr::summarize(
-          Avg_cases = mean(n, na.rm = T), # get descriptive statistics here for the reinjured patient cases
-          Max_cases = max(n, na.rm = T), # the counts are not maintained in this object
-          Min_cases = min(n, na.rm = T),
+          Avg_cases = mean(n, na.rm = TRUE), # get descriptive statistics here for the reinjured patient cases
+          Max_cases = max(n, na.rm = TRUE), # the counts are not maintained in this object
+          Min_cases = min(n, na.rm = TRUE),
           .by = Year
         )
 
       stat <- temp |> # get count of recases, total cases, proportions, and then join descriptive statistics
         dplyr::summarize(
-          Reinjury_cases = sum(reinjury == T, na.rm = T),
+          Reinjury_cases = sum(reinjury == TRUE, na.rm = TRUE),
           Total_cases = n(),
           prop = Reinjury_cases / Total_cases,
           prop_label = traumar::pretty_percent(
@@ -574,7 +581,7 @@ quant_palettes <- paletteer::palettes_c_names
     }
   }
 
-  reinjury_injury_count <- function(df, descriptive_stats = F) {
+  reinjury_injury_count <- function(df, descriptive_stats = FALSE) {
     # before the distinct operation first so it is only done once
     # make the table distinct based on Unique Patient ID and Incident Date,
     # which will give the unique number of times each patient was injured in a
@@ -583,22 +590,22 @@ quant_palettes <- paletteer::palettes_c_names
     init <- df |>
       dplyr::distinct(Incident_Date, Unique_Patient_ID, .keep_all = TRUE)
 
-    if (descriptive_stats == F) {
+    if (descriptive_stats == FALSE) {
       # get the counts of the total injury events that resulted in a trauma center visit
       # among patients that had more than 1 injury event in a given year
 
       out <- init |>
         dplyr::count(Year, Unique_Patient_ID) |>
         dplyr::mutate(reinjury = n > 1) |>
-        dplyr::filter(reinjury == T) |>
-        dplyr::summarize(Reinjury = sum(n, na.rm = T), .by = Year)
+        dplyr::filter(reinjury == TRUE) |>
+        dplyr::summarize(Reinjury = sum(n, na.rm = TRUE), .by = Year)
 
       cli::cli_alert_success(
         "Returning the count(s) of unique injury events related to reinjury."
       )
 
       return(out)
-    } else if (descriptive_stats == T) {
+    } else if (descriptive_stats == TRUE) {
       # get the descriptive statistics for the unique count of injury events
       # among patients that were injured more than once in a given year
 
@@ -606,11 +613,11 @@ quant_palettes <- paletteer::palettes_c_names
         dplyr::filter(!is.na(Unique_Patient_ID)) |>
         dplyr::count(Year, Unique_Patient_ID) |>
         dplyr::mutate(reinjury = n > 1) |>
-        dplyr::filter(reinjury == T) |>
+        dplyr::filter(reinjury == TRUE) |>
         dplyr::summarize(
-          Avg_Injuries = mean(n, na.rm = T),
-          Min_Reinjury = min(n, na.rm = T),
-          Max_Reinjury = max(n, na.rm = T),
+          Avg_Injuries = mean(n, na.rm = TRUE),
+          Min_Reinjury = min(n, na.rm = TRUE),
+          Max_Reinjury = max(n, na.rm = TRUE),
           .by = Year
         )
 
@@ -625,8 +632,8 @@ quant_palettes <- paletteer::palettes_c_names
       out <- init |>
         dplyr::count(Year, Unique_Patient_ID) |>
         dplyr::mutate(reinjury = n > 1) |>
-        dplyr::filter(reinjury == T) |>
-        dplyr::summarize(Reinjury = sum(n, na.rm = T), .by = Year) |>
+        dplyr::filter(reinjury == TRUE) |>
+        dplyr::summarize(Reinjury = sum(n, na.rm = TRUE), .by = Year) |>
         dplyr::left_join(stat, by = "Year") |>
         dplyr::mutate(
           prop = Reinjury / n,
@@ -712,7 +719,7 @@ calc_age_adjusted_rate <- function(
   count, # unquoted column name for observed event count (e.g., EMS runs)
   local_population, # unquoted column name for stratum-specific local population
   standard_population_weight, # unquoted column name for proportional weight from standard population
-  .by = NULL, # grouping variables for aggregating final rates (e.g., County, District)
+  .by = NULL, # grouping variables for aggregating final rates (e.g., 'County', 'District')
   rate = 100000 # rate multiplier (e.g., per 1000, 10000, or 100000)
 ) {
   # Step 1: Calculate age-specific crude rate and weighted contribution
