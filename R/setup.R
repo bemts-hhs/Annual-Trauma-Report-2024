@@ -16,6 +16,9 @@
 #   'devtools',
 #   'tidyverse',
 #   'tidymodels',
+#   'textrecipes',
+#   'embed',
+#   'vip',
 #   'traumar',
 #   'nemsqar',
 #   'naniar',
@@ -461,7 +464,7 @@ quant_palettes <- paletteer::palettes_c_names
         dplyr::summarize(Reinjury = sum(reinjury == T, na.rm = T), .by = Year)
 
       counts <- df |>
-        injury_patient_dplyr::count(Year) # get total patients for the years, including patients that were or were not reinjured
+        dplyr::count(Year) # get total patients for the years, including patients that were or were not reinjured
 
       out <- stat |>
         dplyr::left_join(counts, by = "Year") |> # join overall patient counts to the table of reinjured counts
@@ -614,7 +617,7 @@ quant_palettes <- paletteer::palettes_c_names
       # get total injury events for all patients for each year
 
       stat <- df |>
-        injury_incident_dplyr::count(Year)
+        dplyr::count(Year)
 
       # get the reinjury event counts among patients that were injured more than
       # once in a given year and join descriptive statistics, calculate others
