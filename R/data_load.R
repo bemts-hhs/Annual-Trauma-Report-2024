@@ -20,11 +20,7 @@ trauma_data_path_2023 <- Sys.getenv("trauma_data_2023")
 trauma_data_path_2024 <- Sys.getenv("trauma_data_2024")
 
 # ems
-ems_data_path_2020 <- Sys.getenv("ems_data_2020")
-ems_data_path_2021 <- Sys.getenv("ems_data_2021")
-ems_data_path_2022 <- Sys.getenv("ems_data_2022")
-ems_data_path_2023 <- Sys.getenv("ems_data_2023")
-ems_data_path_2024 <- Sys.getenv("ems_data_2024")
+ems_data_path <- Sys.getenv("ems_data_folder")
 
 # ipop
 ipop_data_path <- Sys.getenv("ipop_data_2024")
@@ -246,24 +242,15 @@ trauma_2024 <- trauma_data_clean |> dplyr::filter(Year == 2024)
 dplyr::glimpse(trauma_2024)
 
 ### ems data ----
-ems_data_2020 <- readr::read_csv(file = ems_data_path_2020)
-ems_data_2021 <- readr::read_csv(file = ems_data_path_2021)
-ems_data_2022 <- readr::read_csv(file = ems_data_path_2022)
-ems_data_2023 <- readr::read_csv(file = ems_data_path_2023)
-ems_data_2024 <- readr::read_csv(file = ems_data_path_2024)
+ems_raw <- readr::read_csv(file = ems_data_path)
 
 # union the ems data
-ems_data <- dplyr::bind_rows(
-  ems_data_2020,
-  ems_data_2021,
-  ems_data_2022,
-  ems_data_2023,
-  ems_data_2024
-)
+ems_data <- ems_raw |>
+  dplyr::filter(Year %in% 2020:2024)
 
 # deal with missing injury categories
 ems_data_clean <- ems_data |>
-  mutate(Injury_1 = if_else(is.na(Injury_1), Injury_2, Injury_1))
+  dplyr::mutate(Injury_1 = dplyr::if_else(is.na(Injury_1), Injury_2, Injury_1))
 
 # check the ems data
 dplyr::glimpse(ems_data_clean)

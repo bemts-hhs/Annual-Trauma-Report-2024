@@ -204,8 +204,7 @@ trauma_data_clean |>
     ggplot2::ggplot(ggplot2::aes(
       x = Year,
       y = Age_Adjusted_Rate,
-      color = "gold",
-      label = pretty_label
+      color = "gold"
     )) +
     ggplot2::geom_line(
       linewidth = 1.5,
@@ -223,6 +222,7 @@ trauma_data_clean |>
     # ) +
     ggplot2::facet_wrap(~Injury_County, scales = "fixed") +
     traumar::theme_cleaner(
+      base_family = "Work Sans",
       title_text_size = 20,
       subtitle_text_size = 18,
       base_size = 15,
@@ -239,8 +239,7 @@ trauma_data_clean |>
       caption = "- Data: Iowa Trauma Registry via ImageTrend\n- All rates are age adjusted per 100,000 population using US 2000 standard pops\n- *Injury incidence rate refers to the incidence of injury events resulting in evaluation/treatment at a verified trauma center based on the injury county"
     ) +
     ggplot2::guides(color = "none") +
-    ggplot2::scale_x_continuous(labels = 2020:2024) +
-    ggplot2::scale_color_viridis_d(option = "viridis")
+    ggplot2::scale_x_continuous(labels = 2020:2024)
 
   # save the plot
   ggplot2::ggsave(
@@ -258,49 +257,52 @@ trauma_data_clean |>
 {
   injury_rates_plot_rural <- injury_rates |>
     dplyr::filter(Designation == "Rural") |>
-    ggplot(aes(
+    ggplot2::ggplot(ggplot2::aes(
       x = Year,
-      y = Age_Adj_Injury_Rate,
-      color = "darkred",
-      label = pretty_label
+      y = Age_Adjusted_Rate,
+      color = "darkred"
     )) +
-    geom_line(
+    ggplot2::geom_line(
       linewidth = 1.5,
       alpha = 0.4,
       lineend = "round",
       linejoin = "round"
     ) +
-    geom_text_repel(
-      angle = 45,
-      color = "black",
-      nudge_y = injury_rates$Age_Adj_Injury_Rate,
-      family = "Work Sans"
-    ) +
-    facet_wrap(~Injury_County) +
-    theme_cleaner_facet(
+    # ggrepel::geom_text_repel(
+    #   angle = 45,
+    #   color = "black",
+    #   nudge_y = injury_rates$Age_Adj_Injury_Rate,
+    #   family = "Work Sans"
+    # ) +
+    ggplot2::facet_wrap(~Injury_County) +
+    traumar::theme_cleaner(
+      base_family = "Work Sans",
       title_text_size = 20,
       subtitle_text_size = 18,
       base_size = 15,
-      axis.text.x = element_text(angle = 90),
-      axis.text.y = element_blank(),
+      axis.text.x = ggplot2::element_text(angle = 90),
       vjust_title = 2.5,
-      vjust_subtitle = 1.5
+      vjust_subtitle = 1.5,
+      facets = TRUE
     ) +
-    labs(
+    ggplot2::labs(
       x = "Year",
       y = "",
       title = "Rural Age Adjusted Injury* Rates by County and Year",
       subtitle = "Bureau of Emergency Medical and Trauma Services | Division of Public Health | Iowa HHS",
       caption = "- Data: Iowa Trauma Registry via ImageTrend\n- All rates are age adjusted per 100,000 population using US 2000 standard pops\n- Injury incidence rate refers to the incidence of injury events resulting in evaluation/treatment at a verified trauma center based on the injury county"
     ) +
-    guides(color = "none") +
-    scale_x_continuous(labels = 2018:2023) +
-    scale_color_viridis_d(option = "viridis")
+    ggplot2::guides(color = "none") +
+    ggplot2::scale_x_continuous(labels = 2020:2024)
 
-  plot_save_params(
+  # save the plot
+  ggplot2::ggsave(
     filename = "injury_rates_plot_rural.png",
+    path = plot_folder,
     plot = injury_rates_plot_rural,
-    path = plot_path
+    height = 9,
+    width = 9 * (16 / 9),
+    units = "in"
   )
 }
 
@@ -309,49 +311,52 @@ trauma_data_clean |>
 {
   case_rates_plot_urban <- case_rates |>
     dplyr::filter(Designation == "Urban") |>
-    ggplot(aes(
+    ggplot2::ggplot(ggplot2::aes(
       x = Year,
-      y = Age_Adj_Trauma_case_Rate,
-      color = "gold",
-      label = pretty_label
+      y = Age_Adjusted_Rate,
+      color = "gold"
     )) +
-    geom_line(
+    ggplot2::geom_line(
       linewidth = 1.5,
       alpha = 0.4,
       lineend = "round",
       linejoin = "round"
     ) +
-    geom_text_repel(
-      angle = 45,
-      color = "black",
-      nudge_y = case_rates$Age_Adj_Trauma_case_Rate * 0.5,
-      family = "Work Sans"
-    ) +
-    facet_wrap(~County) +
-    theme_cleaner_facet(
+    # geom_text_repel(
+    #   angle = 45,
+    #   color = "black",
+    #   nudge_y = case_rates$Age_Adj_Trauma_case_Rate * 0.5,
+    #   family = "Work Sans"
+    # ) +
+    ggplot2::facet_wrap(~County) +
+    traumar::theme_cleaner(
+      base_family = "Work Sans",
       title_text_size = 20,
       subtitle_text_size = 18,
       base_size = 15,
-      axis.text.x = element_text(angle = 90),
-      axis.text.y = element_blank(),
+      axis.text.x = ggplot2::element_text(angle = 90),
       vjust_title = 2.5,
-      vjust_subtitle = 1.5
+      vjust_subtitle = 1.5,
+      facets = TRUE
     ) +
-    labs(
+    ggplot2::labs(
       x = "Year",
       y = "",
       title = "Urban Age Adjusted Trauma Case* Rates by County and Year",
       subtitle = "Bureau of Emergency Medical and Trauma Services | Division of Public Health | Iowa HHS",
       caption = "- Data: Iowa Trauma Registry via ImageTrend\n- All rates are age adjusted per 100,000 population using US 2000 standard pops\n- *Trauma case rate refers to the number of times patients in the registry were evaluated/treated at a verified trauma center based on the hospital county"
     ) +
-    guides(color = "none") +
-    scale_x_continuous(labels = 2018:2023) +
-    scale_color_viridis_d(option = "viridis")
+    ggplot2::guides(color = "none") +
+    ggplot2::scale_x_continuous(labels = 2020:2024)
 
-  plot_save_params(
+  # save the plot
+  ggplot2::ggsave(
     filename = "case_rates_plot_urban.png",
+    path = plot_folder,
     plot = case_rates_plot_urban,
-    path = plot_path
+    height = 9,
+    width = 9 * (16 / 9),
+    units = "in"
   )
 }
 
@@ -360,49 +365,54 @@ trauma_data_clean |>
 {
   case_rates_plot_rural <- case_rates |>
     dplyr::filter(Designation == "Rural") |>
-    ggplot(aes(
+    ggplot2::ggplot(ggplot2::aes(
       x = Year,
-      y = Age_Adj_Trauma_case_Rate,
+      y = Age_Adjusted_Rate,
       color = "darkred",
       label = pretty_label
     )) +
-    geom_line(
+    ggplot2::geom_line(
       linewidth = 1.5,
       alpha = 0.4,
       lineend = "round",
       linejoin = "round"
     ) +
-    geom_text_repel(
-      angle = 45,
-      color = "black",
-      nudge_y = case_rates$Age_Adj_Trauma_case_Rate * 0.5,
-      family = "Work Sans"
-    ) +
-    facet_wrap(~County) +
-    theme_cleaner_facet(
+    # ggrepel::geom_text_repel(
+    #   angle = 45,
+    #   color = "black",
+    #   nudge_y = case_rates$Age_Adj_Trauma_case_Rate * 0.5,
+    #   family = "Work Sans"
+    # ) +
+    ggplot2::facet_wrap(~County) +
+    traumar::theme_cleaner(
+      base_family = "Work Sans",
       title_text_size = 20,
       subtitle_text_size = 18,
       base_size = 15,
-      axis.text.x = element_text(angle = 90),
-      axis.text.y = element_blank(),
+      axis.text.x = ggplot2::element_text(angle = 90),
       vjust_title = 2.5,
-      vjust_subtitle = 1.5
+      vjust_subtitle = 1.5,
+      facets = TRUE
     ) +
-    labs(
+    ggplot2::labs(
       x = "Year",
       y = "",
       title = "Rural Age Adjusted Trauma Case* Rates by County and Year",
       subtitle = "Bureau of Emergency Medical and Trauma Services | Division of Public Health | Iowa HHS",
       caption = "- Data: Iowa Trauma Registry via ImageTrend\n- All rates are age adjusted per 100,000 population using US 2000 standard pops\n- *Trauma case rate refers to the number of times patients in the registry were evaluated/treated at a verified trauma center based on the hospital county"
     ) +
-    guides(color = "none") +
-    scale_x_continuous(labels = 2018:2023) +
-    scale_color_viridis_d(option = "viridis")
+    ggplot2::guides(color = "none") +
+    ggplot2::scale_y_continuous(breaks = c(0, 2000, 4000)) +
+    ggplot2::scale_x_continuous(labels = 2020:2024)
 
-  plot_save_params(
+  # save the plot
+  ggplot2::ggsave(
     filename = "case_rates_plot_rural.png",
+    path = plot_folder,
     plot = case_rates_plot_rural,
-    path = plot_path
+    height = 9,
+    width = 9 * (16 / 9),
+    units = "in"
   )
 }
 
@@ -413,51 +423,29 @@ trauma_data_clean |>
 {
   # injuries
   iowa_injury_rate <- iowa_injury_counts_age |>
-    summarize(
-      Count = sum(Count, na.rm = T),
-      Crude_Rate = round(
-        (sum(Count, na.rm = T) / sum(Population_state, na.rm = T)) * 100000,
-        digits = 1
-      ),
-      Age_Adj_Injury_Rate = round(
-        sum(Adjusted_Rate_Component, na.rm = TRUE) * 100000,
-        digits = 1
-      ),
-      Population = sum(Population_state, na.rm = TRUE),
-      .by = Year
+    calc_age_adjusted_rate(
+      count = Count,
+      local_population = State_Population,
+      standard_population_weight = Weight,
+      .by = "Year",
+      rate = 100000
     ) |>
-    pivot_longer(
-      cols = Crude_Rate:Age_Adj_Injury_Rate,
-      names_to = "Rate_Type",
-      values_to = "Rate"
-    ) |>
-    mutate(Rate_Category = "Injury_Count", .before = Rate_Type)
+    dplyr::mutate(Rate_Category = "Injury_Count", .before = Year)
 
   # cases / incidents
   iowa_case_rate <- iowa_case_counts_age |>
-    summarize(
-      Count = sum(Count, na.rm = T),
-      Crude_Rate = round(
-        (sum(Count, na.rm = T) / sum(Population_state, na.rm = T)) * 100000,
-        digits = 1
-      ),
-      Age_Adj_Trauma_case_Rate = round(
-        sum(Adjusted_Rate_Component, na.rm = TRUE) * 100000,
-        digits = 1
-      ),
-      Population = sum(Population_state, na.rm = TRUE),
-      .by = Year
+    calc_age_adjusted_rate(
+      count = Count,
+      local_population = State_Population,
+      standard_population_weight = Weight,
+      .by = "Year",
+      rate = 100000
     ) |>
-    pivot_longer(
-      cols = Crude_Rate:Age_Adj_Trauma_case_Rate,
-      names_to = "Rate_Type",
-      values_to = "Rate"
-    ) |>
-    mutate(Rate_Category = "case_Count", .before = Rate_Type)
+    dplyr::mutate(Rate_Category = "Case_Count", .before = Year)
 
   # union the state rates
 
-  iowa_injury_case_rates <- bind_rows(iowa_injury_rate, iowa_case_rate)
+  iowa_injury_case_rates <- dplyr::bind_rows(iowa_injury_rate, iowa_case_rate)
 }
 
 # state-level plots
@@ -465,45 +453,60 @@ trauma_data_clean |>
 {
   # injury hospitalization rate
   iowa_injury_rate_plot <- iowa_injury_rate |>
-    mutate(
+    tidyr::pivot_longer(
+      cols = Crude_Rate:Age_Adjusted_Rate,
+      names_to = "Rate_Type",
+      values_to = "Rate"
+    ) |>
+    dplyr::mutate(
       Rate_Type = factor(
         Rate_Type,
-        levels = c("Age_Adj_Injury_Rate", "Crude_Rate"),
-        labels = c("Age Adj Injury Rate", "Crude Rate")
+        levels = c("Age_Adjusted_Rate", "Crude_Rate"),
+        labels = c("Age Adjusted Rate", "Crude Rate")
       ),
-      Label = if_else(
-        Year %in% c(2018, 2022, 2023),
-        pretty_number(Rate, n_decimal = 2),
+      Label = dplyr::if_else(
+        Year %in% c(2020, 2023, 2024),
+        traumar::pretty_number(x = Rate, n_decimal = 2),
         ""
       )
     ) |>
-    ggplot(aes(Year, Rate, color = Rate_Type, label = Label)) +
-    geom_line(linewidth = 2, lineend = "round", linejoin = "round") +
-    theme_cleaner(
+    ggplot2::ggplot(ggplot2::aes(
+      x = Year,
+      y = Rate,
+      color = Rate_Type,
+      label = Label
+    )) +
+    ggplot2::geom_line(linewidth = 2, lineend = "round", linejoin = "round") +
+    traumar::theme_cleaner(
+      base_family = "Work Sans",
       base_size = 15,
       title_text_size = 20,
       subtitle_text_size = 18,
       vjust_title = 1.5
     ) +
-    geom_text(
+    ggplot2::geom_text(
       family = "Work Sans",
       size = 8,
       color = "black",
-      nudge_y = c(35, -15, rep(20, 10))
+      nudge_y = 10
     ) +
-    labs(
+    ggplot2::labs(
       x = "",
       y = "",
       title = "State-level Age Adjusted Injury* Rate by Year: Iowa",
       caption = "- *Injury incidence rate refers to the incidence of injury events resulting in evaluation/treatment at a verified trauma center based\n    on the injury county\n- Data: Iowa Trauma Registry via ImageTrend | Age adjusted rates are per 100,000 population using US 2000 standard pops\n- Bureau of Emergency Medical and Trauma Services | Division of Public Health | Iowa HHS\n- Scale does not reach zero to highlight the trend.",
       color = "Rate Type: "
     ) +
-    scale_color_viridis_d(option = "cividis")
+    ggplot2::scale_color_viridis_d(option = "cividis")
 
-  plot_save_params(
+  # save the plot
+  ggplot2::ggsave(
     filename = "iowa_injury_rate_plot.png",
+    path = plot_folder,
     plot = iowa_injury_rate_plot,
-    path = plot_path
+    height = 9,
+    width = 9 * (16 / 9),
+    units = "in"
   )
 }
 

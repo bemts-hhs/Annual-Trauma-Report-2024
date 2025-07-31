@@ -6,11 +6,7 @@ trauma_data_2023="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/A
 trauma_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/trauma_2024.csv"
 
 # ems data
-ems_data_2020="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/EMS_data_2020.csv"
-ems_data_2021="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/EMS_data_2021.csv"
-ems_data_2022="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/EMS_data_2022.csv"
-ems_data_2023="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/EMS_data_2023.csv"
-ems_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/EMS_data_2024.csv"
+ems_data_folder="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ems_data.csv"
 
 # IPOP data
 ipop_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/Query Output Foss 20250723.xlsx"

@@ -27,6 +27,41 @@
 # ))
 
 ###_____________________________________________________________________________
+# showtext setup ----
+###_____________________________________________________________________________
+
+# run showtext auto, use throughout project
+showtext::showtext_auto()
+
+# get 300 dpi with showtext
+showtext::showtext_opts(dpi = 300)
+
+# get work sans fonts of interest
+all_fonts <- systemfonts::system_fonts()
+
+# regular
+work_sans <- all_fonts |>
+  dplyr::filter(name == "WorkSans-Regular") |>
+  dplyr::pull(path)
+
+# semibold
+work_sans_semibold <- all_fonts |>
+  dplyr::filter(name == "WorkSans-SemiBold") |>
+  dplyr::pull(path)
+
+# extrabold
+work_sans_extrabold <- all_fonts |>
+  dplyr::filter(name == "WorkSans-ExtraBold") |>
+  dplyr::pull(path)
+
+# use sysfonts to load the fonts
+sysfonts::font_add(
+  family = "Work Sans",
+  regular = work_sans,
+  bold = work_sans_extrabold
+)
+
+###_____________________________________________________________________________
 # Get palettes ----
 ###_____________________________________________________________________________
 
