@@ -9,7 +9,8 @@ trauma_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/A
 ems_data_folder="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ems_data.csv"
 
 # IPOP data
-ipop_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/Query Output Foss 20250723.xlsx"
+ipop_ip_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/Query Output Foss 20250723.xlsx"
+ipop_op_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/Outpatient Query Output Foss 20250805.xlsx"
 
 # mechanism / injury mapping
 mech_injury_map="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Desktop/Analytics/Analytics Builds/GitHub/Reference-Files/icd10cm_injury_poisoning_nonpoisoning_2025.csv"
@@ -19,6 +20,9 @@ injury_matrix="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Desktop/Analytics/An
 
 # counties and districts
 iowa_counties_districts="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Desktop/Analytics/Analytics Builds/GitHub/Reference-Files/IA Counties, Regions.xlsx"
+
+# hospital data
+hospital_data_folder="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Desktop/Analytics/Analytics Builds/GitHub/Reference-Files/facility_names_levels_sa_all.xlsx"
 
 # Iowa state populations
 IOWA_COUNTY_POPS="https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/totals/co-est2024-alldata.csv"

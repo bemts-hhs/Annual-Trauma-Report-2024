@@ -22,13 +22,17 @@ trauma_data_path_2024 <- Sys.getenv("trauma_data_2024")
 # ems
 ems_data_path <- Sys.getenv("ems_data_folder")
 
-# ipop
-ipop_data_path <- Sys.getenv("ipop_data_2024")
+# ipop inpatient
+ipop_ip_data_path <- Sys.getenv("ipop_ip_data_2024")
+
+# ipop outpatient
+ipop_op_data_path <- Sys.getenv("ipop_op_data_2024")
 
 # files for classification
 mech_injury_path <- Sys.getenv("mech_injury_map")
 injury_matrix_path <- Sys.getenv("injury_matrix")
 iowa_counties_districts_path <- Sys.getenv("iowa_counties_districts")
+hospital_data_path <- Sys.getenv("hospital_data_folder")
 
 # population files
 iowa_county_pops_path <- Sys.getenv("IOWA_COUNTY_POPS")
@@ -79,6 +83,10 @@ location_data <- readxl::read_excel(path = iowa_counties_districts_path)
 # select variables of interest for Iowa county classification
 location_data <- location_data |>
   dplyr::select(County, Designation, Urbanicity)
+
+# classify IPOP data using hospital information ----
+hospital_data <- readxl::read_excel(path = hospital_data_path) |>
+  janitor::clean_names(case = "screaming_snake")
 
 ### trauma data ----
 trauma_data_2020 <- readr::read_csv(file = trauma_data_path_2020)
@@ -256,11 +264,14 @@ ems_data_clean <- ems_data |>
 dplyr::glimpse(ems_data_clean)
 
 ### ipop data ----
-ipop_data <- readxl::read_excel(path = ipop_data_path, sheet = 1)
 
-# clean ipop data
-ipop_data_clean <- ipop_data |>
+# inpatient
+ipop_ip_data <- readxl::read_excel(path = ipop_ip_data_path, sheet = 1)
+
+# clean inpatient ipop data
+ipop_ip_data_clean <- ipop_ip_data |>
   dplyr::mutate(
+    Inpatient_or_Outpatient = "Inpatient",
     Census_Age_Group = factor(
       Census_Age_Group,
       levels = c(
@@ -323,7 +334,109 @@ ipop_data_clean <- ipop_data |>
     ICD_10_CODE_TRIM = stringr::str_squish(ICD_10_CODE_TRIM),
     .before = Diagnosis_ICD10_Raw
   ) |>
-  dplyr::left_join(nature_injury_mapping, by = "ICD_10_CODE_TRIM")
+  dplyr::left_join(nature_injury_mapping, by = "ICD_10_CODE_TRIM") |>
+  dplyr::mutate(
+    Hospital_Number = as.character(Hospital_Number)
+  ) |>
+  dplyr::left_join(
+    hospital_data,
+    by = c("Hospital_Number" = "IPOP_FACILITY_NUMBER")
+  ) |>
+  dplyr::filter(!is.na(FACILITY_STATE_ID)) |>
+  dplyr::mutate(
+    Date_of_Service = lubridate::as_date(Date_of_Service), # problematic behavior with writing this data.frame to .csv with the DOS column going down as datetime
+    Year = lubridate::year(Date_of_Service),
+    Month = lubridate::month(Date_of_Service),
+    .after = Date_of_Service
+  )
+
+# inpatient
+ipop_op_data <- readxl::read_excel(path = ipop_op_data_path, sheet = 1)
+
+# clean ipop data
+ipop_op_data_clean <- ipop_op_data |>
+  dplyr::mutate(
+    Inpatient_or_Outpatient = "Outpatient",
+    Census_Age_Group = factor(
+      Census_Age_Group,
+      levels = c(
+        "0 to 4",
+        "5 to 9",
+        "10 to 14",
+        "15 to 19",
+        "20 to 24",
+        "25 to 29",
+        "30 to 34",
+        "35 to 39",
+        "40 to 44",
+        "45 to 49",
+        "50 to 54",
+        "55 to 59",
+        "60 to 64",
+        "65 to 69",
+        "70 to 74",
+        "75 to 79",
+        "80 to 84",
+        "85 And Over"
+      ),
+      labels = c(
+        "0-4",
+        "5-9",
+        "10-14",
+        "15-19",
+        "20-24",
+        "25-29",
+        "30-34",
+        "35-39",
+        "40-44",
+        "45-49",
+        "50-54",
+        "55-59",
+        "60-64",
+        "65-69",
+        "70-74",
+        "75-79",
+        "80-84",
+        "85+"
+      )
+    )
+  ) |>
+  dplyr::mutate(
+    ICD_10_CODE_TRIM = dplyr::if_else(
+      stringr::str_detect(
+        Diagnosis_ICD10_Raw,
+        pattern = "[:alpha:]\\d{2}\\d{1}"
+      ),
+      stringr::str_extract(
+        Diagnosis_ICD10_Raw,
+        pattern = "[:alpha:]\\d{2}\\d{1}"
+      ),
+      stringr::str_extract(
+        Diagnosis_ICD10_Raw,
+        pattern = "[:alpha:]\\d{2}[:alpha:]{1}[\\d{1}]?"
+      )
+    ),
+    ICD_10_CODE_TRIM = stringr::str_squish(ICD_10_CODE_TRIM),
+    .before = Diagnosis_ICD10_Raw
+  ) |>
+  dplyr::left_join(nature_injury_mapping, by = "ICD_10_CODE_TRIM") |>
+  dplyr::mutate(
+    Hospital_Number = as.character(Hospital_Number)
+  ) |>
+  dplyr::left_join(
+    hospital_data,
+    by = c("Hospital_Number" = "IPOP_FACILITY_NUMBER")
+  ) |>
+  dplyr::filter(!is.na(FACILITY_STATE_ID)) |>
+  dplyr::mutate(
+    Date_of_Service = lubridate::as_date(Date_of_Service), # problematic behavior with writing this data.frame to .csv with the DOS column going down as datetime
+    Year = lubridate::year(Date_of_Service),
+    Month = lubridate::month(Date_of_Service),
+    .after = Date_of_Service
+  )
+
+# union the IPOP data
+ipop_data_clean <- dplyr::bind_rows(ipop_ip_data_clean, ipop_op_data_clean)
 
 # check the ipop data
 dplyr::glimpse(ipop_data_clean)
