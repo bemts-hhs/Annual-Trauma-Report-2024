@@ -25,11 +25,12 @@
 #   'cli',
 #   'ggrepel',
 #   'ggthemes',
-#   'treemapify'
-#   'janitor'
+#   'treemapify',
+#   'janitor',
 #   'gt',
-#   'gtsummary'
-#   'gtExtras'
+#   'gtsummary',
+#   'gtExtras',
+#   'webshot2'
 # ))
 
 ###_____________________________________________________________________________
@@ -66,6 +67,22 @@ sysfonts::font_add(
   regular = work_sans,
   bold = work_sans_extrabold
 )
+
+###_____________________________________________________________________________
+# Plot / table messages ----
+###_____________________________________________________________________________
+
+# statistics messages
+small_count_message <- "Small counts < 6 are masked to protect confidentiality."
+
+# patient level
+patient_count_message <- "All counts and other measures are at the patient level, only."
+patient_proportion_message <- "Refers to the proportion of injuries attributed to a specified group of patients in a given timespan."
+
+# injury level
+injury_message <- "Injury event refers to the number of unique injury incidents that led to evaluation/treatment at a verified trauma center.  Each injury event could involve multiple cases, and each patient may have one or more injury events in a specified timespan."
+
+# case level
 
 ###_____________________________________________________________________________
 # Get palettes ----

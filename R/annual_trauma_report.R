@@ -185,7 +185,6 @@ gender_group <- trauma_data_clean |>
   )
 
 # create a table visualization using gt()
-
 gender_group_tbl <- {
   gender_group |>
     dplyr::mutate(
@@ -200,7 +199,7 @@ gender_group_tbl <- {
     gt::fmt_number(columns = n, drop_trailing_zeros = TRUE) |>
     gt::tab_header(
       title = "Summary: Injury Events by Gender",
-      subtitle = "Patients Seen at a Trauma Center | Data: Iowa Trauma Registry 2023-2024"
+      subtitle = "Data: Iowa Trauma Registry 2023-2024"
     ) |>
     gt::cols_label(n = "# Injury Events") |>
     gtExtras::gt_plt_bar_pct(
@@ -213,24 +212,22 @@ gender_group_tbl <- {
     ) |>
     gt::row_group_order(groups = c("2023", "2024")) |>
     gt::tab_footnote(
-      footnote = "All counts and other measures are related to reinjured patients, only.",
+      footnote = patient_count_message,
       locations = gt::cells_row_groups()
     ) |>
     gt::tab_footnote(
-      footnote = "Injury event refers to the number of unique injury incidents that led to evaluation/treatment at a verified trauma center.  Each injury event could involve multiple cases, and each patient may have one or more injury events in a specified timespan.",
-      locations = gt::cells_column_labels(columns = n)
+      footnote = small_count_message,
+      locations = gt::cells_body(columns = n, rows = 6)
     ) |>
-    gt::tab_footnote(
-      footnote = "Refers to the proportion of injuries attributed to reinjured patients in a given year",
-      locations = gt::cells_column_labels(columns = Proportion)
-    ) |>
-    gt::tab_footnote(
-      footnote = "Small counts < 6 are masked to protect confidentiality",
-      locations = gt::cells_body(columns = n, rows = 3)
-    ) |>
-    gt::opt_footnote_marks(marks = "extended") |>
     tab_style_hhs(border_cols = n:Proportion, message_text = NULL)
 }
+
+# save the table viz
+gt::gtsave(
+  data = gender_group_tbl,
+  filename = "gender_group_tbl.png",
+  path = output_folder
+)
 
 ###_____________________________________________________________________________
 # Age ----
@@ -284,7 +281,7 @@ gender_group_tbl <- {
 }
 
 # exploratory age plot
-age_group |>
+age_group_test <- age_group |>
   dplyr::filter(Age_Range != "Missing") |>
   ggplot2::ggplot(ggplot2::aes(x = Year, y = n, fill = trend)) +
   ggplot2::geom_col(position = "dodge", width = 0.5) +
@@ -303,6 +300,14 @@ age_group |>
   ) +
   ggplot2::labs(x = "")
 
+# save test object
+ggplot2::ggsave(
+  filename = paste0(output_folder, "/age_group_test.png"),
+  plot = age_group_test,
+  height = 9,
+  width = 9 * (16 / 9)
+)
+
 # df for printing
 age_group_filtered <- age_group |>
   dplyr::filter(Year %in% 2023:2024)
@@ -312,7 +317,7 @@ age_group_plot_df <- age_group |>
   dplyr::filter(Year %in% 2021:2024, Age_Range != "Missing") |>
   dplyr::mutate(
     category = dplyr::if_else(
-      change > 0,
+      change >= 0,
       "Increase",
       dplyr::if_else(change < 0, "Decrease", "Neutral")
     )
@@ -352,23 +357,16 @@ age_group_plot_df <- age_group |>
     ) +
     ggplot2::scale_fill_viridis_d(option = "inferno") +
     traumar::theme_cleaner(
-      base_size = 15,
-      vjust_title = 2,
-      vjust_subtitle = 1.25,
-      facet_text_size = 16,
-      title_text_size = 20,
-      subtitle_text_size = 18,
       draw_panel_border = TRUE,
       facets = TRUE
     )
 
   # save the age group column plot
-
-  plot_save_params(
-    filename = "age_group_plot.png",
+  ggplot2::ggsave(
+    filename = paste0(output_folder, "/age_group_plot.png"),
     plot = age_group_plot,
-    path = plot_path,
-    height = 9
+    height = 7,
+    width = 7 * (16 / 9)
   )
 }
 
@@ -403,28 +401,16 @@ age_group_plot_df <- age_group |>
     ggplot2::facet_wrap(~Age_Range) +
     ggplot2::guides(color = "none", fill = "none") +
     ggplot2::scale_y_continuous(
-      breaks = waiver(),
+      breaks = ggplot2::waiver(),
       labels = function(x) traumar::pretty_number(x, n_decimal = 2)
     ) +
-    ggplot2::scale_color_paletteer_d("colorBlindness::Blue2Orange12Steps") +
-    traumar::theme_cleaner(
-      base_size = 15,
-      vjust_title = 2,
-      vjust_subtitle = 1.25,
-      facet_text_size = 16,
-      title_text_size = 20,
-      subtitle_text_size = 18,
-      draw_panel_border = TRUE,
-      facets = TRUE
-    )
+    paletteer::scale_color_paletteer_d("colorBlindness::Blue2Orange12Steps") +
+    traumar::theme_cleaner(facets = TRUE)
 
   # save the age group line plot
-
-  plot_save_params(
-    filename = "age_group_lines.png",
-    plot = age_group_lines,
-    path = plot_path,
-    height = 9
+  ggplot2::ggsave(
+    filename = paste0(output_folder, "/age_group_lines.png"),
+    plot = age_group_lines
   )
 }
 
@@ -440,7 +426,7 @@ age_group_plot_df <- age_group |>
     dplyr::mutate(
       Patient_Race = dplyr::if_else(
         grepl(pattern = "not|select", x = Patient_Race, ignore.case = TRUE),
-        "Not Known/Not Recorded",
+        "Missing",
         dplyr::if_else(
           grepl(
             pattern = "american indian",
@@ -459,9 +445,10 @@ age_group_plot_df <- age_group |>
           )
         )
       ),
-      Patient_Race = tidyr::replace_na(Patient_Race, "Not Known/Not Recorded")
+      Patient_Race = tidyr::replace_na(Patient_Race, "Missing")
     ) |>
-    injury_incident_count(Year, Patient_Race, name = "Injury_Events") |>
+    injury_incident_count(Year, Patient_Race) |>
+    dplyr::rename(Injury_Events = n) |>
     tidyr::complete(Year, Patient_Race, fill = list(Injury_Events = 0)) |>
     injury_mutate() |>
     dplyr::arrange(Patient_Race) |>
@@ -479,18 +466,18 @@ age_group_plot_df <- age_group |>
 }
 
 # df for plotting
-
 race_group_plot_df <- race_group |>
   dplyr::filter(Year %in% 2021:2024) |>
-  dplyr::mutate(normal_events = normalize(Injury_Events), .by = Patient_Race)
+  dplyr::mutate(
+    normal_events = traumar::normalize(Injury_Events, method = "min_max"),
+    .by = Patient_Race
+  )
 
 # df for printing
-
 race_group_filtered <- race_group |>
   dplyr::filter(Year %in% 2023:2024)
 
 # build the race group column plot
-
 {
   race_group_plot <- race_group_plot_df |>
     dplyr::filter(Patient_Race != "Not Known/Not Recorded") |>
@@ -504,7 +491,7 @@ race_group_filtered <- race_group |>
       fill = category,
       label = change_label
     )) +
-    ggplot2::geom_col(color = "black", width = 0.8) +
+    ggplot2::geom_col(color = "black", width = 0.5) +
     ggrepel::geom_text_repel(
       size = 6,
       segment.color = NA,
@@ -528,23 +515,14 @@ race_group_filtered <- race_group |>
     ) +
     ggplot2::scale_fill_viridis_d(option = "inferno") +
     traumar::theme_cleaner(
-      base_size = 15,
-      vjust_title = 2,
-      vjust_subtitle = 1.25,
-      facet_text_size = 16,
-      title_text_size = 20,
-      subtitle_text_size = 18,
       draw_panel_border = TRUE,
       facets = TRUE
     )
 
   # save the race group column plot
-
-  plot_save_params(
-    filename = "race_group_plot.png",
-    plot = race_group_plot,
-    path = plot_path,
-    height = 9
+  ggplot2::ggsave(
+    filename = paste0(output_folder, "/race_group_plot.png"),
+    plot = race_group_plot
   )
 }
 
