@@ -37,36 +37,36 @@
 # showtext setup ----
 ###_____________________________________________________________________________
 
-# run showtext auto, use throughout project
-showtext::showtext_auto()
+# # run showtext auto, use throughout project
+# showtext::showtext_auto()
 
-# get 300 dpi with showtext
-showtext::showtext_opts(dpi = 300)
+# # get 300 dpi with showtext
+# showtext::showtext_opts(dpi = 300)
 
-# get work sans fonts of interest
-all_fonts <- systemfonts::system_fonts()
+# # get work sans fonts of interest
+# all_fonts <- systemfonts::system_fonts()
 
-# regular
-work_sans <- all_fonts |>
-  dplyr::filter(name == "WorkSans-Regular") |>
-  dplyr::pull(path)
+# # regular
+# work_sans <- all_fonts |>
+#   dplyr::filter(name == "WorkSans-Regular") |>
+#   dplyr::pull(path)
 
-# semibold
-work_sans_semibold <- all_fonts |>
-  dplyr::filter(name == "WorkSans-SemiBold") |>
-  dplyr::pull(path)
+# # semibold
+# work_sans_semibold <- all_fonts |>
+#   dplyr::filter(name == "WorkSans-SemiBold") |>
+#   dplyr::pull(path)
 
-# extrabold
-work_sans_extrabold <- all_fonts |>
-  dplyr::filter(name == "WorkSans-ExtraBold") |>
-  dplyr::pull(path)
+# # extrabold
+# work_sans_extrabold <- all_fonts |>
+#   dplyr::filter(name == "WorkSans-ExtraBold") |>
+#   dplyr::pull(path)
 
-# use sysfonts to load the fonts
-sysfonts::font_add(
-  family = "Work Sans",
-  regular = work_sans,
-  bold = work_sans_extrabold
-)
+# # use sysfonts to load the fonts
+# sysfonts::font_add(
+#   family = "Work Sans",
+#   regular = work_sans,
+#   bold = work_sans_extrabold
+# )
 
 ###_____________________________________________________________________________
 # Plot / table messages ----
@@ -684,7 +684,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
     if (!descriptive_stats) {
       # Simple count of unique cases by user-defined grouping variables
       out <- temp |>
-        dplyr::count(!!!grouping_syms)
+        dplyr::count(...)
 
       cli::cli_alert_success(
         "Returning the count(s) of total unique inpatient injury cases."
@@ -695,7 +695,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
 
     # When descriptive_stats = TRUE, add change metrics (numeric and percent change)
     out <- temp |>
-      dplyr::count(!!!grouping_syms) |>
+      dplyr::count(...) |>
       add_change_metrics()
 
     cli::cli_alert_success(
@@ -805,26 +805,26 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
   ### Optionally returns descriptive statistics including reinjury counts, proportions, and change metrics
   ###_____________________________________________________________________________
   reinjury_patient_count <- function(df, ..., descriptive_stats = FALSE) {
+    # Capture grouping variables as symbols and convert to character strings for .by and joins
+    grouping_syms <- rlang::ensyms(...)
+    grouping_vars <- sapply(grouping_syms, rlang::as_string)
+
     # Step 1: Prepare data - remove missing patient IDs to avoid overcounting
     # Deduplicate by Incident_Date and Unique_Patient_ID to get unique injury events
     # Count injury events per patient per year
     temp <- df |>
       dplyr::filter(!is.na(Unique_Patient_ID)) |>
       dplyr::distinct(Incident_Date, Unique_Patient_ID, .keep_all = TRUE) |>
-      dplyr::count(Year, Unique_Patient_ID) |>
+      dplyr::count(!!!grouping_syms, Unique_Patient_ID) |>
       dplyr::mutate(reinjury = n > 1) # flag reinjuries (more than 1 injury in year)
 
-    # Step 2: Prepare reinjury descriptive summary by year for reinjured patients only
-    summary <- temp |>
-      dplyr::filter(reinjury) |>
-      summarize_reinjury_stats(grouping_vars = "Year")
-
+    # Step 2: Prepare reinjury descriptive summary
     if (!descriptive_stats) {
       # Return counts of unique reinjured patients per year
       out <- temp |>
         dplyr::summarize(
           reinjured_patients = sum(reinjury, na.rm = TRUE),
-          .by = Year
+          .by = grouping_vars
         )
 
       cli::cli_alert_success(
@@ -838,17 +838,22 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
     stat <- temp |>
       dplyr::summarize(
         n = sum(reinjury, na.rm = TRUE),
-        .by = Year
+        .by = grouping_vars
       )
+
+    # Descriptive statistics on the counts
+    summary <- temp |>
+      dplyr::filter(reinjury) |>
+      summarize_reinjury_stats(grouping_vars = grouping_vars)
 
     # get overall count of patients
     counts <- df |>
-      injury_patient_count(Year, name = "n_patients")
+      injury_patient_count(!!!grouping_syms) |>
+      dplyr::rename(n_patients = n)
 
     # compute overall statistics
     out <- stat |>
-      dplyr::left_join(counts, by = "Year") |> # join total patient counts by year
-      dplyr::left_join(summary, by = "Year") |> # join reinjury descriptive stats
+      dplyr::left_join(counts, by = grouping_vars) |> # join total patient counts by year
       add_change_metrics() |>
       dplyr::mutate(
         prop_reinjured = n / n_patients,
@@ -857,7 +862,8 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
           n_decimal = 2
         )
       ) |>
-      dplyr::rename(reinjured_patients = n)
+      dplyr::rename(reinjured_patients = n) |>
+      dplyr::left_join(summary, by = grouping_vars) # join reinjury descriptive stats
 
     cli::cli_alert_success(
       "Returning counts and proportions of reinjured patients with descriptive statistics."
@@ -873,7 +879,11 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
   ### Optionally returns descriptive statistics including reinjury case counts, proportions,
   ### and change metrics.
   ###_____________________________________________________________________________
-  reinjury_case_count <- function(df, descriptive_stats = FALSE) {
+  reinjury_case_count <- function(df, ..., descriptive_stats = FALSE) {
+    # Capture grouping variables as symbols and convert to character strings for .by and joins
+    grouping_syms <- rlang::ensyms(...)
+    grouping_vars <- sapply(grouping_syms, rlang::as_string)
+
     #___________________________________________________________________________
     # Step 0: Identify reinjured patients by year
     #   - Remove duplication of injury events (Incident_Date + Unique_Patient_ID)
@@ -884,12 +894,12 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
     init <- df |>
       dplyr::filter(!is.na(Unique_Patient_ID)) |> # drop missing patient IDs
       dplyr::distinct(Incident_Date, Unique_Patient_ID, .keep_all = TRUE) |>
-      dplyr::count(Year, Unique_Patient_ID) |>
+      dplyr::count(!!!grouping_syms, Unique_Patient_ID) |>
       dplyr::mutate(reinjury = n > 1) # flag reinjured patients
 
     reinjured_patients <- init |>
-      dplyr::select(Year, Unique_Patient_ID, reinjury) |> # keep only relevant fields
-      dplyr::distinct(Year, Unique_Patient_ID, reinjury) # deduplicate just in case
+      dplyr::select(!!!grouping_syms, Unique_Patient_ID, reinjury) |> # keep only relevant fields
+      dplyr::distinct(!!!grouping_syms, Unique_Patient_ID, reinjury) # deduplicate just in case
 
     #___________________________________________________________________________
     # Step 1: Attach reinjury flag to the case-level dataset
@@ -901,9 +911,11 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
       dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
       dplyr::left_join(
         reinjured_patients,
-        by = c("Year", "Unique_Patient_ID")
+        by = c(grouping_vars, "Unique_Patient_ID")
       ) |>
-      dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE)
+      dplyr::group_by(!!!grouping_syms) |>
+      dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
+      dplyr::ungroup()
 
     #___________________________________________________________________________
     # Step 2: If no descriptive statistics requested, return simple reinjury case counts
@@ -911,7 +923,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
     if (!descriptive_stats) {
       out <- temp |>
         dplyr::filter(reinjury == TRUE) |> # keep only cases for reinjured patients
-        dplyr::count(Year) # count reinjury cases per year
+        dplyr::count(!!!grouping_syms) # count reinjury cases per year
 
       cli::cli_alert_success(
         "Returning count(s) of injury cases of patients that had more than 1 injury event in a given year."
@@ -927,23 +939,9 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
     #___________________________________________________________________________
     reinjured_case_summary <- temp |>
       dplyr::filter(reinjury == TRUE, !is.na(Unique_Patient_ID)) |> # focus on reinjured patients with valid IDs
-      dplyr::count(Year, Unique_Patient_ID) |> # count cases per reinjured patient per year
+      dplyr::count(!!!grouping_syms, Unique_Patient_ID) |> # count cases per reinjured patient per year
       dplyr::filter(n > 1) |> # keep repeated cases per reinjured patient
-      dplyr::summarize(
-        # summarize recurrence distribution
-        Min_cases = min(n, na.rm = TRUE),
-        Max_cases = max(n, na.rm = TRUE),
-        Mode_Reinjury = stat_mode(n, na.rm = TRUE),
-        Q25_Reinjury = stats::quantile(n, probs = 0.25, na.rm = TRUE, type = 7),
-        Median_Reinjury = stats::quantile(
-          n,
-          probs = 0.5,
-          na.rm = TRUE,
-          type = 7
-        ),
-        Q75_Reinjury = stats::quantile(n, probs = 0.75, na.rm = TRUE, type = 7),
-        .by = Year
-      )
+      summarize_reinjury_stats(grouping_vars = grouping_vars)
 
     # 3b. Aggregate reinjury case-level counts and proportions by year
     stat <- temp |>
@@ -952,7 +950,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
         Total_cases = dplyr::n(), # all cases (including non-reinjured)
         prop = Reinjury_cases / Total_cases, # proportion of cases that are reinjury cases
         prop_label = traumar::pretty_percent(prop, n_decimal = 2),
-        .by = Year
+        .by = grouping_vars
       ) |>
       dplyr::mutate(
         # Year-over-year proportional change in reinjury cases
@@ -961,7 +959,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
         change_label = traumar::pretty_percent(change, n_decimal = 2)
       ) |>
       # 3c. Join the reinjured patient case recurrence summaries
-      dplyr::left_join(reinjured_case_summary, by = "Year")
+      dplyr::left_join(reinjured_case_summary, by = grouping_vars)
 
     cli::cli_alert_success(
       "Returning count(s) and descriptive statistics of injury cases of patients that had more than 1 injury event in a given year."
@@ -976,7 +974,11 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
   ### This function aggregates injury events among those reinjured patients,
   ### optionally returning descriptive statistics including counts, proportions, and change.
   ###_____________________________________________________________________________
-  reinjury_injury_count <- function(df, descriptive_stats = FALSE) {
+  reinjury_injury_count <- function(df, ..., descriptive_stats = FALSE) {
+    # Capture grouping variables as symbols and convert to character strings for .by and joins
+    grouping_syms <- rlang::ensyms(...)
+    grouping_vars <- sapply(grouping_syms, rlang::as_string)
+
     #___________________________________________________________________________
     # Step 0: Define unique injury events and flag reinjured patients
     #   - Deduplicate by Incident_Date + Unique_Patient_ID to get unique injury events
@@ -987,7 +989,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
       dplyr::distinct(Incident_Date, Unique_Patient_ID, .keep_all = TRUE)
 
     patient_year <- init |>
-      dplyr::count(Year, Unique_Patient_ID) |>
+      dplyr::count(!!!grouping_syms, Unique_Patient_ID) |>
       dplyr::mutate(reinjury = n > 1) # flag reinjured patients
 
     #___________________________________________________________________________
@@ -998,7 +1000,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
         dplyr::filter(reinjury) |>
         dplyr::summarize(
           Reinjury = sum(n, na.rm = TRUE), # sum of injury events for reinjured patients
-          .by = Year
+          .by = grouping_vars
         )
 
       cli::cli_alert_success(
@@ -1014,31 +1016,31 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
     #   (distribution of number of injury events per reinjured patient)
     #___________________________________________________________________________
     summary_stats <- patient_year |>
-      dplyr::filter(reinjury) |>
-      summarize_reinjury_stats(grouping_vars = "Year") # min/max/median/mode/quartiles
+      dplyr::filter(reinjury, !is.na(Unique_Patient_ID)) |> # focus on reinjured patients with valid IDs
+      summarize_reinjury_stats(grouping_vars = grouping_vars) # min/max/median/mode/quartiles
 
     # Step 2: Total reinjury event counts per year (sum of n for reinjured patients)
     reinjury_events <- patient_year |>
       dplyr::filter(reinjury) |>
       dplyr::summarize(
         Reinjury = sum(n, na.rm = TRUE),
-        .by = Year
+        .by = grouping_vars
       )
 
     # Step 3: Overall injury event counts per year (from original data)
     total_events <- df |>
-      injury_incident_count(Year) # mirrors original; includes all events (not deduped)
+      injury_incident_count(!!!grouping_syms) # mirrors original; includes all events (not deduped)
 
     # Step 4: Combine reinjury counts, total counts, compute proportions and change
     out <- reinjury_events |>
-      dplyr::left_join(total_events, by = "Year") |> # join total event counts (column `n`)
+      dplyr::left_join(total_events, by = grouping_vars) |> # join total event counts (column `n`)
       dplyr::mutate(
         prop = Reinjury / n, # proportion of injury events that are reinjury-related
         prop_label = traumar::pretty_percent(prop, n_decimal = 2),
         change = (Reinjury - dplyr::lag(Reinjury)) / dplyr::lag(Reinjury), # year-over-year change
         change_label = traumar::pretty_percent(change, n_decimal = 2)
       ) |>
-      dplyr::left_join(summary_stats, by = "Year") # attach reinjury distribution summaries
+      dplyr::left_join(summary_stats, by = grouping_vars) # attach reinjury distribution summaries
 
     cli::cli_alert_success(
       "Returning counts and statistics of unique injury events."
