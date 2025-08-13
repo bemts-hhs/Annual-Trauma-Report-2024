@@ -2,6 +2,10 @@
 # Get the unique responses for the ICD-10 causes of injury to make categories ----
 ###_____________________________________________________________________________
 
+####
+# You must first run data_load.R and setup.R before running this script
+####
+
 cause_of_injury_trauma <- trauma_2024 |>
   injury_case_count(CAUSE_OF_INJURY_AR_1, sort = TRUE) |>
   dplyr::mutate(
