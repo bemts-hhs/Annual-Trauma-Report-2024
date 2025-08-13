@@ -1,6 +1,6 @@
-####
-# Script to create the Annual Trauma Report Executive Summary ----
-####
+###_____________________________________________________________________________
+# Annual Trauma Report Executive Summary ----
+###_____________________________________________________________________________
 
 ####
 # You must first run data_load.R and setup.R before running this script
