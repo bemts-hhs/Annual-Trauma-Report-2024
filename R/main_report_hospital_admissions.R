@@ -11,7 +11,6 @@
 {
   ipop_longitudinal_cases <- ipop_data_clean |>
     ipop_case_count(Year, which = "Inpatient", descriptive_stats = TRUE) |>
-    dplyr::filter(Year >= 2020, Year < 2024) |>
     dplyr::select(-change_label) |>
     dplyr::rename(`Total Cases` = n, `% Change in Cases` = change) |>
     tidyr::pivot_longer(
@@ -27,9 +26,8 @@
     dplyr::mutate(
       `2020-2024 Trend` = list(c(
         `2020`,
-        `2019`,
-        `2020`,
         `2021`,
+        `2022`,
         `2023`,
         `2024`
       )),
