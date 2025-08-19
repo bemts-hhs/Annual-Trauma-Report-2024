@@ -51,7 +51,7 @@
 # CDC WONDER ALL UNITED STATES all ages ----
 
 # All US and all ages 2019 ----
-death_cdc_wonder_nation_all_2020 <- readr::read_csv(
+death_cdc_wonder_nation_all_2019 <- readr::read_csv(
   file = "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/death/Top 15 Causes of Death in the United States All Ages 2019.csv",
   n_max = 10
 ) |>
@@ -66,7 +66,7 @@ death_cdc_wonder_nation_all_2020 <- readr::read_csv(
   )
 
 # All US and all ages 2020 ----
-death_cdc_wonder_nation_all_2019 <- readr::read_csv(
+death_cdc_wonder_nation_all_2020 <- readr::read_csv(
   file = "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/death/Top 15 Causes of Death in the United States All Ages 2020.csv",
   n_max = 10
 ) |>
@@ -81,7 +81,7 @@ death_cdc_wonder_nation_all_2019 <- readr::read_csv(
   )
 
 # All US and all ages 2021 ----
-death_cdc_wonder_nation_all_2020 <- readr::read_csv(
+death_cdc_wonder_nation_all_2021 <- readr::read_csv(
   file = "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/death/Top 15 Causes of Death in the United States All Ages 2021.csv",
   n_max = 10
 ) |>
@@ -96,7 +96,7 @@ death_cdc_wonder_nation_all_2020 <- readr::read_csv(
   )
 
 # All US and all ages 2022 ----
-death_cdc_wonder_nation_all_2021 <- readr::read_csv(
+death_cdc_wonder_nation_all_2022 <- readr::read_csv(
   file = "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/death/Top 15 Causes of Death in the United States All Ages 2022.csv",
   n_max = 10
 ) |>
