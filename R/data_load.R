@@ -785,6 +785,33 @@ us_age_pops_clean <- us_age_pops |>
 # Load death data ----
 ###_____________________________________________________________________________
 
+###_____________________________________________________________________________
+# State-wide deaths and CDC WONDER National Center for Health Statistics
+# This needs to be updated each year to add on new years that are finalized
+# Go to Current Final Multiple Cause of Death Data and make data request
+# Use the query to group by UCD 15 leading causes of death
+# Include crude rates and age adjusted rates and download all confidence interaval
+# and standard error estimations
+# You have to download each file year after year. Previous data are finalized
+# so no need to download those again unless there are documented updates from CDC
+# Select UCD - ICD-10 113 Cause List and MCD - ICD-10 113 Cause List options
+# URL below:
+# https://wonder.cdc.gov/mcd.html
+# Use the same process above to get ages 1-44 data for the entire US as well as
+# the all ages US data
+# For the Iowa specific data, use the same process to get all ages and ages 1-44
+# datasets
+###_____________________________________________________________________________
+# For Josh Jungling's breakdown, go here and choose the most current year's report
+# https://hhs.iowa.gov/public-health/health-statistics
+# Go to the most recent year's Vital Statistics of Iowa Annual Report
+# Use the chart LEADING CAUSES OF DEATH BY NUMBER AND PERCENT OF TOTAL DEATHS, BY GENDER
+# Copy / paste the text data from the last 5 years into ChatGPT and ask it to
+# put the data in data.frame format and it will.
+# for other estimates, utilize the Tableau workbook at
+# https://data.idph.state.ia.us/#/site/IDPH-Data/views/TraumaDeaths/TraumaRequest
+###_____________________________________________________________________________
+
 # CDC WONDER ALL UNITED STATES all ages ----
 
 # All US and all ages 2019 ----
