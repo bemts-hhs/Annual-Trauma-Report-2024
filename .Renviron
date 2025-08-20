@@ -9,8 +9,16 @@ trauma_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/A
 ems_data_folder="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ems_data.csv"
 
 # IPOP data
-ipop_ip_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/Query Output Foss 20250723.xlsx"
-ipop_op_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/Outpatient Query Output Foss 20250805.xlsx"
+ipop_ip_data_2020="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_ip_data_2020.csv"
+ipop_ip_data_2021="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_ip_data_2021.csv"
+ipop_ip_data_2022="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_ip_data_2022.csv"
+ipop_ip_data_2023="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_ip_data_2023.csv"
+ipop_ip_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_ip_data_2024.csv"
+ipop_op_data_2020="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_op_data_2020.csv"
+ipop_op_data_2021="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_op_data_2021.csv"
+ipop_op_data_2022="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_op_data_2022.csv"
+ipop_op_data_2023="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_op_data_2023.csv"
+ipop_op_data_2024="C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/data/ipop/ipop_op_data_2024.csv"
 
 # death
 

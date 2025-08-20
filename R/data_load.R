@@ -13,24 +13,32 @@ death_path <- Sys.getenv("death_folder")
 
 # clinical data
 
-# trauma
+# trauma environment variables ----
 trauma_data_path_2020 <- Sys.getenv("trauma_data_2020")
 trauma_data_path_2021 <- Sys.getenv("trauma_data_2021")
 trauma_data_path_2022 <- Sys.getenv("trauma_data_2022")
 trauma_data_path_2023 <- Sys.getenv("trauma_data_2023")
 trauma_data_path_2024 <- Sys.getenv("trauma_data_2024")
 
-# ems
+# ems environment variables ----
 ems_data_path <- Sys.getenv("ems_data_folder")
 
-# ipop inpatient
-ipop_ip_data_path <- Sys.getenv("ipop_ip_data_2024")
+# ipop inpatient environment variables ----
+ipop_ip_data_path_2020 <- Sys.getenv("ipop_ip_data_2020")
+ipop_ip_data_path_2021 <- Sys.getenv("ipop_ip_data_2021")
+ipop_ip_data_path_2022 <- Sys.getenv("ipop_ip_data_2022")
+ipop_ip_data_path_2023 <- Sys.getenv("ipop_ip_data_2023")
+ipop_ip_data_path_2024 <- Sys.getenv("ipop_ip_data_2024")
 
-# ipop outpatient
-ipop_op_data_path <- Sys.getenv("ipop_op_data_2024")
+# ipop outpatient environment variables ----
+ipop_op_data_path_2020 <- Sys.getenv("ipop_op_data_2020")
+ipop_op_data_path_2021 <- Sys.getenv("ipop_op_data_2021")
+ipop_op_data_path_2022 <- Sys.getenv("ipop_op_data_2022")
+ipop_op_data_path_2023 <- Sys.getenv("ipop_op_data_2023")
+ipop_op_data_path_2024 <- Sys.getenv("ipop_op_data_2024")
 
-# deaths
-# nationwide, all ages
+# deaths environment variables ----
+# nationwide, all ages environment variables ----
 death_us_all_2019_path <- Sys.getenv("death_us_all_2019_folder")
 death_us_all_2020_path <- Sys.getenv("death_us_all_2020_folder")
 death_us_all_2021_path <- Sys.getenv("death_us_all_2021_folder")
@@ -38,7 +46,7 @@ death_us_all_2022_path <- Sys.getenv("death_us_all_2022_folder")
 death_us_all_2023_path <- Sys.getenv("death_us_all_2023_folder")
 death_us_all_2019_2023_path <- Sys.getenv("death_us_all_2019_2023_folder")
 
-# nationwide, ages 1-44
+# nationwide, ages 1-44 environment variables ----
 death_us_1_44_2019_path <- Sys.getenv("death_us_1_44_2019_folder")
 death_us_1_44_2020_path <- Sys.getenv("death_us_1_44_2020_folder")
 death_us_1_44_2021_path <- Sys.getenv("death_us_1_44_2021_folder")
@@ -46,7 +54,7 @@ death_us_1_44_2022_path <- Sys.getenv("death_us_1_44_2022_folder")
 death_us_1_44_2023_path <- Sys.getenv("death_us_1_44_2023_folder")
 death_us_1_44_2019_2023_path <- Sys.getenv("death_us_1_44_2019_2023_folder")
 
-# iowa, all ages
+# iowa, all ages environment variables ----
 death_ia_all_2019_path <- Sys.getenv("death_ia_all_2019_folder")
 death_ia_all_2020_path <- Sys.getenv("death_ia_all_2020_folder")
 death_ia_all_2021_path <- Sys.getenv("death_ia_all_2021_folder")
@@ -54,7 +62,7 @@ death_ia_all_2022_path <- Sys.getenv("death_ia_all_2022_folder")
 death_ia_all_2023_path <- Sys.getenv("death_ia_all_2023_folder")
 death_ia_all_2019_2023_path <- Sys.getenv("death_ia_all_2019_2023_folder")
 
-# iowa, ages 1-44
+# iowa, ages 1-44 environment variables ----
 death_ia_1_44_2019_path <- Sys.getenv("death_ia_1_44_2019_folder")
 death_ia_1_44_2020_path <- Sys.getenv("death_ia_1_44_2020_folder")
 death_ia_1_44_2021_path <- Sys.getenv("death_ia_1_44_2021_folder")
@@ -62,7 +70,7 @@ death_ia_1_44_2022_path <- Sys.getenv("death_ia_1_44_2022_folder")
 death_ia_1_44_2023_path <- Sys.getenv("death_ia_1_44_2023_folder")
 death_ia_1_44_2019_2023_path <- Sys.getenv("death_ia_1_44_2019_2023_folder")
 
-# iowa, health statistics data
+# iowa, health statistics data environment variables ----
 deathpop_data_path <- Sys.getenv("deathpop_data_folder")
 p15_path <- Sys.getenv("p15_folder")
 p16_1_path <- Sys.getenv("p16_1_folder")
@@ -72,13 +80,13 @@ p30_path <- Sys.getenv("p30_folder")
 p33_1_path <- Sys.getenv("p33_1_folder")
 p33_2_path <- Sys.getenv("p33_2_folder")
 
-# files for classification
+# files for classification environment variables ----
 mech_injury_path <- Sys.getenv("mech_injury_map")
 injury_matrix_path <- Sys.getenv("injury_matrix")
 iowa_counties_districts_path <- Sys.getenv("iowa_counties_districts")
 hospital_data_path <- Sys.getenv("hospital_data_folder")
 
-# population files
+# population files environment variables ----
 iowa_county_pops_path <- Sys.getenv("IOWA_COUNTY_POPS")
 iowa_county_age_pops_path <- Sys.getenv("IOWA_COUNTY_AGE_POPS")
 us_standard_pops_path <- Sys.getenv("US_STANDARD_POPS")
@@ -309,10 +317,17 @@ dplyr::glimpse(ems_data_clean)
 
 ### ipop data ----
 
-# inpatient
-ipop_ip_data <- readxl::read_excel(path = ipop_ip_data_path, sheet = 1)
+# inpatient ipop data ----
+ipop_ip_data_2020 <- readr::read_csv(file = ipop_ip_data_path_2020)
+ipop_ip_data_2021 <- readr::read_csv(file = ipop_ip_data_path_2021)
+ipop_ip_data_2022 <- readr::read_csv(file = ipop_ip_data_path_2022)
+ipop_ip_data_2023 <- readr::read_csv(file = ipop_ip_data_path_2023)
+ipop_ip_data_2024 <- readr::read_csv(file = ipop_ip_data_path_2024)
 
-# clean inpatient ipop data
+### union the ipop inpatient data ----
+ipop_ip_data <- dplyr::bind_rows(ipop_ip_data_2020, ipop_ip_data_2021, ipop_ip_data_2022, ipop_ip_data_2023, ipop_ip_data_2024)
+
+# clean inpatient ipop data ----
 ipop_ip_data_clean <- ipop_ip_data |>
   dplyr::mutate(
     Inpatient_or_Outpatient = "Inpatient",
@@ -394,8 +409,20 @@ ipop_ip_data_clean <- ipop_ip_data |>
     .after = Date_of_Service
   )
 
-# inpatient
-ipop_op_data <- readxl::read_excel(path = ipop_op_data_path, sheet = 1)
+# ingest outpatient ipop data ----
+ipop_op_data_2020 <- readr::read_csv(file = ipop_op_data_path_2020)
+ipop_op_data_2021 <- readr::read_csv(file = ipop_op_data_path_2021)
+ipop_op_data_2022 <- readr::read_csv(file = ipop_op_data_path_2022)
+ipop_op_data_2023 <- readr::read_csv(file = ipop_op_data_path_2023)
+ipop_op_data_2024 <- readr::read_csv(file = ipop_op_data_path_2024)
+
+# union the outpatient ipop data ----
+ipop_op_data <- dplyr::bind_rows(ipop_op_data_2020 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), 
+                                 ipop_op_data_2021 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), 
+                                 ipop_op_data_2022 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), 
+                                 ipop_op_data_2023 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), 
+                                 ipop_op_data_2024 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.)))
+                                )
 
 # clean ipop data
 ipop_op_data_clean <- ipop_op_data |>
@@ -480,14 +507,10 @@ ipop_op_data_clean <- ipop_op_data |>
   )
 
 # union the IPOP data
-ipop_data_clean <- dplyr::bind_rows(ipop_ip_data_clean, ipop_op_data_clean)
+ipop_data_clean <- dplyr::bind_rows(ipop_ip_data_clean |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), ipop_op_data_clean)
 
 # check the ipop data
 dplyr::glimpse(ipop_data_clean)
-
-###_____________________________________________________________________________
-# Death data ----
-###_____________________________________________________________________________
 
 ###_____________________________________________________________________________
 # census bureau standard pops 2020-2024 census ----
@@ -782,7 +805,7 @@ us_age_pops_clean <- us_age_pops |>
   dplyr::rename(US_Population = Population)
 
 ###_____________________________________________________________________________
-# Load death data ----
+# Death data ----
 ###_____________________________________________________________________________
 
 ###_____________________________________________________________________________
