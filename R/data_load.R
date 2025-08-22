@@ -992,7 +992,131 @@ readr::write_csv(
 )
 
 ###
-# CDC WONDER ages 1-44 ----
+# Iowa CDC WONDER all ages ----
+###
+
+# Iowa and all ages 2019 ----
+death_cdc_wonder_iowa_all_2019 <- readr::read_csv(
+  file = death_ia_all_2019_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2019) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa and all ages 2020 ----
+death_cdc_wonder_iowa_all_2020 <- readr::read_csv(
+  file = death_ia_all_2020_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2020) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa and all ages 2021 ----
+death_cdc_wonder_iowa_all_2021 <- readr::read_csv(
+  file = death_ia_all_2021_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2021) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa and all ages 2022 ----
+death_cdc_wonder_iowa_all_2022 <- readr::read_csv(
+  file = death_ia_all_2022_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2022) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa and all ages 2023 ----
+death_cdc_wonder_iowa_all_2023 <- readr::read_csv(
+  file = death_ia_all_2023_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2023) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa and all ages 2019-2023 ----
+death_cdc_wonder_iowa_all_2019_2023_aggregate <- readr::read_csv(
+  file = death_ia_all_2019_2023_path,
+  n_max = 10
+) |>
+  dplyr::select(-Notes) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# All US deaths 2019 - 2023 ----
+death_cdc_wonder_iowa_all_2019_2023_detail <- dplyr::bind_rows(
+  death_cdc_wonder_iowa_all_2019,
+  death_cdc_wonder_iowa_all_2020,
+  death_cdc_wonder_iowa_all_2021,
+  death_cdc_wonder_iowa_all_2022,
+  death_cdc_wonder_iowa_all_2023
+) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Download top 10 deaths yearly detail file to .csv for future reference ----
+readr::write_csv(
+  death_cdc_wonder_iowa_all_2019_2023_detail,
+  file = paste0(death_path, "death_cdc_wonder_iowa_all_2019_2023_detail.csv")
+)
+
+# Download top 10 deaths aggregate file to .csv for future reference ----
+readr::write_csv(
+  death_cdc_wonder_iowa_all_2019_2023_aggregate,
+  file = paste0(
+    death_path,
+    "death_cdc_wonder_iowa_all_2019_2023_aggregate.csv"
+  )
+)
+
+###
+# US National CDC WONDER ages 1-44 ----
 ###
 
 # CDC ages 1-44 2019 ----
@@ -1113,6 +1237,151 @@ readr::write_csv(
   file = paste0(
     death_path,
     "death_cdc_wonder_nation_1_44_2019_2023_aggregate.csv"
+  )
+)
+
+###
+# Iowa CDC WONDER ages 1-44 ----
+###
+
+# Iowa CDC ages 1-44 2019 ----
+death_cdc_wonder_iowa_1_44_2019 <- readr::read_csv(
+  file = death_ia_1_44_2019_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2019) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa CDC ages 1-44 2020 ----
+death_cdc_wonder_iowa_1_44_2020 <- readr::read_csv(
+  file = death_ia_1_44_2020_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2020) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa CDC ages 1-44 2021 ----
+death_cdc_wonder_iowa_1_44_2021 <- readr::read_csv(
+  file = death_ia_1_44_2021_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2021) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa CDC ages 1-44 2022 ----
+death_cdc_wonder_iowa_1_44_2022 <- readr::read_csv(
+  file = death_ia_1_44_2022_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2022) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa CDC ages 1-44 2023 ----
+death_cdc_wonder_iowa_1_44_2023 <- readr::read_csv(
+  file = death_ia_1_44_2023_path,
+  n_max = 10
+) |>
+  dplyr::rename(Year = Notes) |>
+  dplyr::mutate(Year = 2023) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa CDC ages 1-44 2019-2023 ----
+death_cdc_wonder_iowa_1_44_2019_2023_aggregate <- readr::read_csv(
+  file = death_ia_1_44_2019_2023_path,
+  n_max = 10
+) |>
+  dplyr::select(-Notes) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# All Iowa  ages 1-44 deaths 2019 - 2023
+death_cdc_wonder_iowa_1_44_2019_2023_detail <- dplyr::bind_rows(
+  death_cdc_wonder_iowa_1_44_2019 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("rate"),
+      ~ as.numeric(stringr::str_remove_all(., "Unreliable"))
+    )),
+  death_cdc_wonder_iowa_1_44_2020 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("rate"),
+      ~ as.numeric(stringr::str_remove_all(., "Unreliable"))
+    )),
+  death_cdc_wonder_iowa_1_44_2021 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("rate"),
+      ~ as.numeric(stringr::str_remove_all(., "Unreliable"))
+    )),
+  death_cdc_wonder_iowa_1_44_2022 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("rate"),
+      ~ as.numeric(stringr::str_remove_all(., "Unreliable"))
+    )),
+  death_cdc_wonder_iowa_1_44_2023 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("rate"),
+      ~ as.numeric(stringr::str_remove_all(., "Unreliable"))
+    ))
+) |>
+  dplyr::mutate(
+    `UCD - 15 Leading Causes of Death` = stringr::str_replace_all(
+      `UCD - 15 Leading Causes of Death`,
+      pattern = "^[#]|\\s\\(.+\\)|\\s\\(.+\\)\\s\\(.+\\)",
+      ""
+    )
+  )
+
+# Iowa Download top 10 deaths ages 1-44 yearly detail file to .csv for future
+# reference ----
+readr::write_csv(
+  death_cdc_wonder_iowa_1_44_2019_2023_detail,
+  file = paste0(death_path, "death_cdc_wonder_iowa_1_44_2019_2023_detail.csv")
+)
+
+# Iowa Download top 10 deaths ages 1-44 aggregate file to .csv for future reference ----
+readr::write_csv(
+  death_cdc_wonder_iowa_1_44_2019_2023_aggregate,
+  file = paste0(
+    death_path,
+    "death_cdc_wonder_iowa_1_44_2019_2023_aggregate.csv"
   )
 )
 
