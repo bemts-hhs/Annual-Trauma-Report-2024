@@ -105,14 +105,14 @@
       legend.position.inside = c(0.945, 0.9),
       legend.direction = "vertical"
     ) +
-    theme(legend.title = element_text(vjust = 2.5))
+    ggplot2::theme(legend.title = element_text(vjust = 2.5))
 
   # save the plot of reinjured patients
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "reinjured_trauma_2024_plot.png",
     plot = reinjured_trauma_2024_plot,
-    path = plot_path
+    path = plot_folder
   )
 }
 
@@ -127,19 +127,23 @@ reinjured_patients_tbl <- trauma_data_clean |>
   reinjured_patients_tbl_gt <- reinjured_patients_tbl |>
     dplyr::filter(Year < 2024) |>
     dplyr::select(-matches("min|max|_label")) |>
-    rename(
+    dplyr::rename(
       `# Reinjured Pts.` = Reinjury,
       `Total # Pts.` = n,
       `Avg # Injury Events per Pt.` = Avg_Injuries,
       `% Change in Reinjured Pts.` = change,
       `Proportion Reinjured Pts.` = prop
     ) |>
-    pivot_longer(
+    tidyr::pivot_longer(
       cols = `# Reinjured Pts.`:`Proportion Reinjured Pts.`,
       names_to = "Category",
       values_to = "Value"
     ) |>
-    pivot_wider(id_cols = Category, names_from = Year, values_from = Value) |>
+    tidyr::pivot_wider(
+      id_cols = Category,
+      names_from = Year,
+      values_from = Value
+    ) |>
     dplyr::mutate(
       `2020-2024 Trend` = list(c(
         `2020`,
@@ -152,19 +156,19 @@ reinjured_patients_tbl <- trauma_data_clean |>
       .by = Category
     ) |>
     dplyr::select(Category, `2021`:`2020-2024 Trend`) |>
-    gt() |>
-    gt_plt_sparkline(
+    gt::gt() |>
+    gtExtras::gt_plt_sparkline(
       column = `2020-2024 Trend`,
       type = "shaded",
       same_limit = FALSE,
       label = FALSE
     ) |>
-    fmt_number(rows = 1:3, drop_trailing_zeros = TRUE) |>
-    fmt_percent(rows = 4:5, drop_trailing_zeros = TRUE) |>
-    tab_row_group(label = "Counts", rows = 1:2) |>
-    tab_row_group(label = "Proportion and Change", rows = 3:5) |>
-    row_group_order(groups = c("Counts", "Proportion and Change")) |>
-    tab_header(
+    gt::fmt_number(rows = 1:3, drop_trailing_zeros = TRUE) |>
+    gt::fmt_percent(rows = 4:5, drop_trailing_zeros = TRUE) |>
+    gt::tab_row_group(label = "Counts", rows = 1:2) |>
+    gt::tab_row_group(label = "Proportion and Change", rows = 3:5) |>
+    gt::row_group_order(groups = c("Counts", "Proportion and Change")) |>
+    gt::tab_header(
       title = "Summary: Trend of Reinjured Patients in Iowa",
       subtitle = "Patients Seen at a Trauma Center | Data: iowa Trauma Registry 2020-2024"
     ) |>
@@ -185,7 +189,7 @@ reinjured_patients_tbl <- trauma_data_clean |>
       ),
       mod = log(n)
     ) |>
-    replace_with_na(list(number_label = "NA")) |>
+    naniar::replace_with_na(list(number_label = "NA")) |>
     tidyr::replace_na(list(Patient_Gender = "Missing", number_label = "*"))
 
   # special gender category cases to be mentioned in the caption of the plot
@@ -260,14 +264,14 @@ reinjured_patients_tbl <- trauma_data_clean |>
       draw_panel_border = TRUE,
       facets = TRUE
     ) +
-    theme(legend.title = element_text(vjust = 2.5))
+    ggplot2::theme(legend.title = element_text(vjust = 2.5))
 
   # save the plot of count of reinjured patients by injury count category
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "gender_reinjury_events_plot.png",
     plot = gender_reinjury_events_plot,
-    path = plot_path
+    path = plot_folder
   )
 }
 
@@ -306,7 +310,7 @@ reinjured_patients_tbl <- trauma_data_clean |>
       ),
       mod = log(n)
     ) |>
-    replace_with_na(list(number_label = "NA")) |>
+    naniar::replace_with_na(list(number_label = "NA")) |>
     tidyr::replace_na(list(number_label = "*"))
 
   # totals by race of reinjury
@@ -344,14 +348,14 @@ reinjured_patients_tbl <- trauma_data_clean |>
       ),
       mod = log(n)
     ) |>
-    replace_with_na(list(number_label = "NA")) |>
+    naniar::replace_with_na(list(number_label = "NA")) |>
     tidyr::replace_na(list(number_label = "*"))
 
   # save this file to use for reporting
 
-  write_csv(
+  readr::write_csv(
     x = race_reinjury_events_tbl_totals,
-    file = "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/reference/race_reinjury_events_tbl_totals.csv"
+    file = output_folder
   )
 
   # overall patient population race statistics
@@ -383,9 +387,9 @@ reinjured_patients_tbl <- trauma_data_clean |>
 
   # save this file to use for reporting
 
-  write_csv(
+  readr::write_csv(
     x = trauma_reg_race_pop_stats,
-    file = "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/reference/trauma_reg_race_pop_stats.csv"
+    file = output_folder
   )
 }
 
@@ -437,10 +441,10 @@ reinjured_patients_tbl <- trauma_data_clean |>
 
   # save the reinjured pt count by race plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "race_reinjury_events_plot.png",
     plot = race_reinjury_events_plot,
-    path = plot_path
+    path = plot_folder
   )
 }
 
@@ -481,7 +485,7 @@ reinjured_patients_tbl <- trauma_data_clean |>
       ),
       mod = log(n)
     ) |>
-    replace_with_na(list(number_label = "NA")) |>
+    naniar::replace_with_na(list(number_label = "NA")) |>
     tidyr::replace_na(list(number_label = "*"))
 
   # totals by age and reinjury
@@ -523,14 +527,14 @@ reinjured_patients_tbl <- trauma_data_clean |>
       ),
       mod = log(n)
     ) |>
-    replace_with_na(list(number_label = "NA")) |>
+    naniar::replace_with_na(list(number_label = "NA")) |>
     tidyr::replace_na(list(number_label = "*"))
 
   # save this file to use for reporting
 
-  write_csv(
+  readr::write_csv(
     x = age_reinjury_events_tbl_totals,
-    file = "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/reference/age_reinjury_events_tbl_totals.csv"
+    file = output_folder
   )
 
   # overall patient population age statistics
@@ -564,9 +568,9 @@ reinjured_patients_tbl <- trauma_data_clean |>
 
   # save this file to use for reporting
 
-  write_csv(
+  readr::write_csv(
     x = trauma_reg_age_pop_stats,
-    file = "C:/Users/nfoss0/OneDrive - State of Iowa HHS/Analytics/BEMTS/Annual Trauma Report/2024/reference/trauma_reg_age_pop_stats.csv"
+    file = output_folder
   )
 }
 
@@ -612,14 +616,14 @@ reinjured_patients_tbl <- trauma_data_clean |>
       facet_text_size = 18,
       facets = TRUE
     ) +
-    ylim(0, 10)
+    ggplot2::ylim(0, 10)
 
   # save the reinjured pt count by race plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "age_reinjury_events_plot.png",
     plot = age_reinjury_events_plot,
-    path = plot_path
+    path = plot_folder
   )
 }
 
@@ -645,7 +649,7 @@ reinjured_patients_tbl <- trauma_data_clean |>
 
   cause_of_injury_reinjury_complete <- cause_of_injury_reinjury |>
     dplyr::filter(MECHANISM_1 != "Missing") |>
-    slice_max(n, n = 15)
+    dplyr::slice_max(n, n = 15)
 
   # cause of injury among reinjured patients plot
 
@@ -693,14 +697,14 @@ reinjured_patients_tbl <- trauma_data_clean |>
       legend.position.inside = c(0.75, 0.25),
       legend.direction = "vertical"
     ) +
-    theme(legend.text = element_blank())
+    ggplot2::theme(legend.text = element_blank())
 
   # save the reinjury cause of injury plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "cause_of_injury_reinjury_plot.png",
     plot = cause_of_injury_reinjury_plot,
-    path = plot_path
+    path = plot_folder
   )
 }
 
@@ -759,10 +763,10 @@ urbanicity_reinjury <- reinjured_trauma_2024 |>
 
   # save the reinjured proportions plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "urbanicity_reinjury_plot.png",
     plot = urbanicity_reinjury_plot,
-    path = plot_path
+    path = plot_folder
   )
 }
 
@@ -797,8 +801,8 @@ urbanicity_reinjury_phat <- reinjured_trauma_2024 |>
       )
     ) |>
     dplyr::distinct(Unique_Patient_ID, .keep_all = TRUE) |>
-    specify(reinjured_fct ~ Designation_Patient, success = "yes") |>
-    calculate(stat = "diff in props", order = c("Urban", "Rural")) |>
+    infer::specify(reinjured_fct ~ Designation_Patient, success = "yes") |>
+    infer::calculate(stat = "diff in props", order = c("Urban", "Rural")) |>
     dplyr::pull() # urban - rural
 }
 
@@ -812,14 +816,14 @@ urbanicity_reinjury_phat <- reinjured_trauma_2024 |>
       reinjured = dplyr::if_else(reinjured == T, "yes", "no"),
       reinjured = factor(reinjured, levels = c("yes", "no"))
     ) |>
-    prop_test(
+    infer::prop_test(
       reinjured ~ Designation_Patient,
       success = "yes",
       order = c("Urban", "Rural"),
       alternative = "two-sided",
       correct = FALSE
     ) |>
-    stat_sig(p_val_col = p_value)
+    traumar::stat_sig(p_val_col = p_value)
 }
 
 # test alt hypothesis that the proportions of Iowans that are reinjured are different between urban / rural settings
@@ -833,10 +837,10 @@ urbanicity_reinjury_phat <- reinjured_trauma_2024 |>
       reinjured = factor(reinjured, levels = c("yes", "no"))
     ) |>
     dplyr::distinct(Unique_Patient_ID, .keep_all = TRUE) |>
-    specify(reinjured ~ Designation_Patient, success = "yes") |>
-    hypothesise(null = "independence") |>
-    generate(reps = 1000, type = "permute") |>
-    calculate(stat = "diff in props", order = c("Urban", "Rural"))
+    infer::specify(reinjured ~ Designation_Patient, success = "yes") |>
+    infer::hypothesise(null = "independence") |>
+    infer::generate(reps = 1000, type = "permute") |>
+    infer::calculate(stat = "diff in props", order = c("Urban", "Rural"))
 }
 
 # get critical values
@@ -948,10 +952,10 @@ density_df <- data.frame(x = density_data$x, y = density_data$y)
 
   # save the difference plot showing statistical significance
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "urbanicity_reinjury_diff_plot.png",
     plot = urbanicity_reinjury_diff_plot,
-    path = plot_path
+    path = plot_folder
   )
 }
 
@@ -1025,7 +1029,10 @@ reinjury_risk_death <- reinjury_mortality_df |>
 # and the different risk definitions groups
 
 {
-  reinjury_risk_death_tbl <- bind_rows(reinjury_risk_death, reinjury_mortality)
+  reinjury_risk_death_tbl <- dplyr::bind_rows(
+    reinjury_risk_death,
+    reinjury_mortality
+  )
 
   reinjury_risk_death_gt <- reinjury_risk_death_tbl |>
     dplyr::select(-reinjured) |>
@@ -1037,74 +1044,76 @@ reinjury_risk_death <- reinjury_mortality_df |>
       ),
       N = small_count_label(var = N, cutoff = 6, replacement = NA_real_)
     ) |>
-    gt() |>
-    cols_label(
+    gt::gt() |>
+    gt::cols_label(
       injury_category = "Reinjury Category",
       mortality_rate = "Mortality Rate"
     ) |>
-    fmt_number(columns = N, drop_trailing_zeros = TRUE) |>
-    fmt_percent(columns = mortality_rate, drop_trailing_zeros = TRUE) |>
-    tab_row_group(rows = 1, label = "Singularly Injured Pts.") |>
-    tab_row_group(rows = c(2:7), label = "Reinjured Pts.") |>
-    row_group_order(groups = c("Singularly Injured Pts.", "Reinjured Pts.")) |>
-    sub_missing(columns = injury_category) |>
-    sub_missing(columns = N) |>
-    tab_header(
+    gt::fmt_number(columns = N, drop_trailing_zeros = TRUE) |>
+    gt::fmt_percent(columns = mortality_rate, drop_trailing_zeros = TRUE) |>
+    gt::tab_row_group(rows = 1, label = "Singularly Injured Pts.") |>
+    gt::tab_row_group(rows = c(2:7), label = "Reinjured Pts.") |>
+    gt::row_group_order(
+      groups = c("Singularly Injured Pts.", "Reinjured Pts.")
+    ) |>
+    gt::sub_missing(columns = injury_category) |>
+    gt::sub_missing(columns = N) |>
+    gt::tab_header(
       title = "Differences in Mortality Rate Among Reinjured / Singularly Injured Pts.",
       subtitle = "Source: Iowa ImageTrend Patient Registry | 2024"
     ) |>
-    tab_source_note(
-      source_note = md(paste0(
+    gt::tab_source_note(
+      source_note = gt::md(paste0(
         fontawesome::fa("magnifying-glass"),
         " Some patients could not be assigned a unique identifier due to key missing variables, and so the totals will not equal the sum of the counts for the injury event groups as records with a missing unique identifiers were omitted."
       ))
     ) |>
-    tab_footnote(
+    gt::tab_footnote(
       footnote = "These data reflect counts of patients.  Counts smaller than 6 are masked to protect confidentiality.",
       locations = cells_column_labels(columns = N)
     ) |>
-    tab_footnote(
+    gt::tab_footnote(
       footnote = "This proportion reflects the within group mortality rate.",
       locations = cells_column_labels(columns = mortality_rate)
     ) |>
-    opt_footnote_marks(marks = "standard") |>
+    gt::opt_footnote_marks(marks = "standard") |>
     tab_style_hhs(border_cols = N:mortality_rate)
 }
 
 # get difference between reinjured and singularly injured patients on death rates
 
 reinjury_risk_death_diff <- reinjury_mortality_df |>
-  specify(dead ~ reinjured_fct, success = "yes") |>
-  calculate(stat = "diff in props", order = c("yes", "no")) |> # reinjured_yes - reinjured_no, in this order
+  infer::specify(dead ~ reinjured_fct, success = "yes") |>
+  infer::calculate(stat = "diff in props", order = c("yes", "no")) |> # reinjured_yes - reinjured_no, in this order
   dplyr::pull()
 
 # conduct the test of equal proportions - two-sided
 
 {
   reinjury_risk_death_prop_test_two_side <- reinjury_mortality_df |>
-    prop_test(
+    infer::prop_test(
       dead ~ reinjured_fct,
       success = "yes",
       order = c("yes", "no"),
       alternative = "two-sided",
       correct = FALSE
     ) |>
-    stat_sig(p_val_col = p_value) # alt. hypothesis is reinjured prop is less than non-reinjured prop and was statistically significant
+    traumar::stat_sig(p_val_col = p_value) # alt. hypothesis is reinjured prop is less than non-reinjured prop and was statistically significant
 
   # conduct the test of equal proportions - reinjured less than non-reinjured
 
   reinjury_risk_death_prop_test_greater <- reinjury_mortality_df |>
-    prop_test(
+    infer::prop_test(
       dead ~ reinjured_fct,
       success = "yes",
       order = c("yes", "no"),
       alternative = "greater",
       correct = FALSE
     ) |>
-    stat_sig(p_val_col = p_value) # alt. hypothesis is reinjured prop is less than non-reinjured prop and was statistically significant
+    traumar::stat_sig(p_val_col = p_value) # alt. hypothesis is reinjured prop is less than non-reinjured prop and was statistically significant
 
   # union the models
-  reinjury_risk_death_prop_test_both <- bind_rows(
+  reinjury_risk_death_prop_test_both <- dplyr::bind_rows(
     reinjury_risk_death_prop_test_two_side,
     reinjury_risk_death_prop_test_greater
   )
@@ -1113,10 +1122,10 @@ reinjury_risk_death_diff <- reinjury_mortality_df |>
 # utilize a simulation based model to understand the difference in proportions
 
 reinjury_risk_death_model <- reinjury_mortality_df |>
-  specify(dead ~ reinjured_fct, success = "yes") |>
-  hypothesize(null = "independence") |>
-  generate(reps = 1000, type = "permute") |>
-  calculate(stat = "diff in props", order = c("yes", "no"))
+  infer::specify(dead ~ reinjured_fct, success = "yes") |>
+  infer::hypothesize(null = "independence") |>
+  infer::generate(reps = 1000, type = "permute") |>
+  infer::calculate(stat = "diff in props", order = c("yes", "no"))
 
 # get critical values
 
@@ -1128,7 +1137,6 @@ reinjury_risk_death_lower_crit <- reinjury_risk_death_crit$lower
 reinjury_risk_death_upper_crit <- reinjury_risk_death_crit$upper
 
 # get density curve
-
 reinjury_risk_death_density <- density(reinjury_risk_death_model$stat)
 
 reinjury_risk_death_density_df <- data.frame(
@@ -1223,9 +1231,9 @@ reinjury_risk_death_density_df <- data.frame(
 
   # save the difference plot showing statistical significance
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "reinjury_risk_death_diff_plot.png",
     plot = reinjury_risk_death_diff_plot,
-    path = plot_path
+    path = plot_folder
   )
 }

@@ -101,6 +101,16 @@ quant_palettes <- paletteer::palettes_c_names
 # Custom functions for statistics ----
 ###_____________________________________________________________________________
 
+# Calculate critical values, useful in statistics and useful to shade plots
+# Define the custom function to calculate critical values
+calculate_critical_values <- function(data, stat_col, alpha = 0.05) {
+  data %>%
+    dplyr::summarise(
+      lower = quantile({{ stat_col }}, probs = alpha / 2),
+      upper = quantile({{ stat_col }}, probs = 1 - (alpha / 2))
+    )
+}
+
 # Function to compute the statistical mode of a vector
 # Returns the most frequently occurring value in x
 # Handles NA values by removing them before computation (optional)
