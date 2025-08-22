@@ -325,7 +325,13 @@ ipop_ip_data_2023 <- readr::read_csv(file = ipop_ip_data_path_2023)
 ipop_ip_data_2024 <- readr::read_csv(file = ipop_ip_data_path_2024)
 
 ### union the ipop inpatient data ----
-ipop_ip_data <- dplyr::bind_rows(ipop_ip_data_2020, ipop_ip_data_2021, ipop_ip_data_2022, ipop_ip_data_2023, ipop_ip_data_2024)
+ipop_ip_data <- dplyr::bind_rows(
+  ipop_ip_data_2020,
+  ipop_ip_data_2021,
+  ipop_ip_data_2022,
+  ipop_ip_data_2023,
+  ipop_ip_data_2024
+)
 
 # clean inpatient ipop data ----
 ipop_ip_data_clean <- ipop_ip_data |>
@@ -417,12 +423,33 @@ ipop_op_data_2023 <- readr::read_csv(file = ipop_op_data_path_2023)
 ipop_op_data_2024 <- readr::read_csv(file = ipop_op_data_path_2024)
 
 # union the outpatient ipop data ----
-ipop_op_data <- dplyr::bind_rows(ipop_op_data_2020 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), 
-                                 ipop_op_data_2021 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), 
-                                 ipop_op_data_2022 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), 
-                                 ipop_op_data_2023 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), 
-                                 ipop_op_data_2024 |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.)))
-                                )
+ipop_op_data <- dplyr::bind_rows(
+  ipop_op_data_2020 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("zip_code"),
+      ~ as.character(.)
+    )),
+  ipop_op_data_2021 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("zip_code"),
+      ~ as.character(.)
+    )),
+  ipop_op_data_2022 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("zip_code"),
+      ~ as.character(.)
+    )),
+  ipop_op_data_2023 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("zip_code"),
+      ~ as.character(.)
+    )),
+  ipop_op_data_2024 |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("zip_code"),
+      ~ as.character(.)
+    ))
+)
 
 # clean ipop data
 ipop_op_data_clean <- ipop_op_data |>
@@ -507,7 +534,14 @@ ipop_op_data_clean <- ipop_op_data |>
   )
 
 # union the IPOP data
-ipop_data_clean <- dplyr::bind_rows(ipop_ip_data_clean |> dplyr::mutate(dplyr::across(tidyselect::matches("zip_code"), ~ as.character(.))), ipop_op_data_clean)
+ipop_data_clean <- dplyr::bind_rows(
+  ipop_ip_data_clean |>
+    dplyr::mutate(dplyr::across(
+      tidyselect::matches("zip_code"),
+      ~ as.character(.)
+    )),
+  ipop_op_data_clean
+)
 
 # check the ipop data
 dplyr::glimpse(ipop_data_clean)
@@ -951,7 +985,10 @@ readr::write_csv(
 # Download top 10 deaths aggregate file to .csv for future reference ----
 readr::write_csv(
   death_cdc_wonder_nation_all_2019_2023_aggregate,
-  file = paste0(death_path, "death_cdc_wonder_nation_all_2019_2023_aggregate.csv"
+  file = paste0(
+    death_path,
+    "death_cdc_wonder_nation_all_2019_2023_aggregate.csv"
+  )
 )
 
 ###
@@ -1067,13 +1104,16 @@ death_cdc_wonder_nation_1_44_2019_2023_detail <- dplyr::bind_rows(
 # reference ----
 readr::write_csv(
   death_cdc_wonder_nation_1_44_2019_2023_detail,
-  file = paste0(death_path, "death_cdc_wonder_nation_1_44_2019_2023_detail.csv"
+  file = paste0(death_path, "death_cdc_wonder_nation_1_44_2019_2023_detail.csv")
 )
 
 # Download top 10 deaths ages 1-44 aggregate file to .csv for future reference ----
 readr::write_csv(
   death_cdc_wonder_nation_1_44_2019_2023_aggregate,
-  file = paste0(death_path, "death_cdc_wonder_nation_1_44_2019_2023_aggregate.csv"
+  file = paste0(
+    death_path,
+    "death_cdc_wonder_nation_1_44_2019_2023_aggregate.csv"
+  )
 )
 
 ###
