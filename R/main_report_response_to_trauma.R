@@ -45,7 +45,7 @@ trauma_facility_count_by_level <- trauma_2024 |>
 
   # save the plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "trauma_facility_count_by_level_plot.png",
     plot = trauma_facility_count_by_level_plot,
     path = plot_path
@@ -110,7 +110,7 @@ trauma_facility_count_by_level <- trauma_2024 |>
 
   # save the plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "trauma_cases_by_facility_level_plot.png",
     plot = trauma_cases_by_facility_level_plot,
     path = plot_path
@@ -171,7 +171,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
       subtitle = "Source: Iowa ImageTrend Patient Registry | 2024",
       caption = "These data reflect cases, and so include transfers.  Cases are defined as each distinct episode when a patient enters\nan ED or hospital for treatment of an injury."
     ) +
-    coord_flip() +
+    ggplot2::coord_flip() +
     ggplot2::guides(color = "none") +
     traumar::theme_cleaner(
       base_size = 15,
@@ -187,7 +187,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the definitive care case count plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "trauma_cases_by_def_care_level_plot.png",
     plot = trauma_cases_by_def_care_level_plot,
     path = plot_path
@@ -285,7 +285,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the transport mode plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "transport_mode_to_facility_plot.png",
     plot = transport_mode_to_facility_plot,
     path = plot_path
@@ -393,7 +393,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the transport mode plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "transport_mode_to_facility_receiving_plot.png",
     plot = transport_mode_to_facility_receiving_plot,
     path = plot_path
@@ -472,7 +472,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
       labels = function(x) traumar::pretty_number(x, n_decimal = 1)
     )
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "case_count_iss_range_plot.png",
     plot = case_count_iss_range_plot,
     path = plot_path
@@ -558,7 +558,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "case_count_iss_range_receiving_plot.png",
     plot = case_count_iss_range_receiving_plot,
     path = plot_path
@@ -574,7 +574,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
     injury_case_count(Level, CAUSE_OF_INJURY_AR_1) |>
     dplyr::arrange(Level, desc(n)) |>
     dplyr::mutate(number_label = prettyNum(n, big.mark = ",")) |>
-    drop_na()
+    tidyr::drop_na()
 }
 
 # cause of injury frequency collapsed categories plot
@@ -613,13 +613,13 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
       legend_position = "inside",
       legend.position.inside = c(.75, .25)
     ) +
-    theme(legend.title = element_blank()) +
+    ggplot2::theme(legend.title = element_blank()) +
     ggplot2::scale_fill_paletteer_d(palette = "colorblindr::OkabeIto_black") +
     ggplot2::scale_y_continuous(
       labels = function(x) traumar::pretty_number(x, n_decimal = 1)
     )
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "cause_of_injury_freq_plot.png",
     plot = cause_of_injury_freq_plot,
     path = plot_path
@@ -691,7 +691,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "cause_of_injury_additional_freq_plots.png",
     plot = cause_of_injury_additional_freq_plots,
     path = plot_path
@@ -752,7 +752,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the plot of transfer cases
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "transfers_out_by_trauma_lvl_plot.png",
     plot = transfers_out_by_trauma_lvl_plot,
     path = plot_path
@@ -872,7 +872,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the transfer delay reason plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "transfer_delays_transfer_out_plot.png",
     plot = transfer_delays_transfer_out_plot,
     path = plot_path
@@ -920,7 +920,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   avg_ed_stay_transfers_iss_diff <- avg_ed_stay_transfers_iss |>
     dplyr::select(-c(median_los, mod)) |>
-    pivot_wider(
+    tidyr::pivot_wider(
       id_cols = ISS_Range,
       names_from = Trauma_Team_Activated,
       values_from = avg_los
@@ -983,7 +983,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the avg Ed stay prior to transfer by iss range plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "avg_ed_stay_transfers_iss_plot.png",
     plot = avg_ed_stay_transfers_iss_plot,
     path = plot_path
@@ -1092,7 +1092,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the average ED stay in minutes prior to transfer by ISS range and trauma level plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "avg_ED_LOS_transfer_iss_level_plot.png",
     plot = avg_ED_LOS_transfer_iss_level_plot,
     path = plot_path
@@ -1127,12 +1127,12 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
       .by = c(Year, Trauma_Team_Activated)
     ) |>
     dplyr::arrange(Year, Trauma_Team_Activated) |>
-    pivot_wider(
+    tidyr::pivot_wider(
       id_cols = Year,
       names_from = Trauma_Team_Activated,
       values_from = avg_los
     ) |>
-    set_names(nm = c("Year", "Activated", "Not Activated")) |>
+    purrr::set_names(nm = c("Year", "Activated", "Not Activated")) |>
     dplyr::mutate(
       label_1 = dplyr::if_else(
         Year == min(Year) | Year == max(Year),
@@ -1263,7 +1263,7 @@ trauma_cases_by_def_care_level <- trauma_2024 |>
 
   # save the longitudinal ED LOS plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "longitudinal_avg_ed_los_plot.png",
     plot = longitudinal_avg_ed_los_plot,
     path = plot_path

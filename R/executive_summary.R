@@ -517,7 +517,7 @@ race_group_filtered <- race_group |>
 
   # save the race group line plot
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "race_group_line_plot.png",
     plot = race_group_line_plot,
     path = plot_path,
@@ -642,7 +642,7 @@ legend_order = leading_causes_years |>
 
   # save the plot on leading causes
 
-  plot_save_params(
+  ggplot2::ggsave(
     filename = "leading_causes_injury_years.png",
     plot = leading_causes_plot,
     path = plot_path,
@@ -1077,12 +1077,12 @@ farm_related_injuries <- {
 # pivot the df for a gt() table
 
 intentionality_of_injury_pivot <- intentionality_of_injury |>
-  pivot_longer(
+  tidyr::pivot_longer(
     cols = 2:length(intentionality_of_injury),
     names_to = "Category",
     values_to = "Vals"
   ) |>
-  pivot_wider(id_cols = Category, names_from = Year, values_from = Vals) |>
+  tidyr::pivot_wider(id_cols = Category, names_from = Year, values_from = Vals) |>
   tidyr::replace_na(list(`2020` = 0)) |>
   dplyr::mutate(
     `2020-2024 Trend` = list(c(`2020`, `2019`, `2020`, `2021`, `2023`, `2024`)),
@@ -1094,40 +1094,40 @@ intentionality_of_injury_pivot <- intentionality_of_injury |>
 
 intentionality_of_injury_tbl <- {
   intentionality_of_injury_pivot |>
-    gt() |>
-    cols_label(Category = "") |>
-    gt_plt_sparkline(
+    gt::gt() |>
+    gt::cols_label(Category = "") |>
+    gtExtras::gt_plt_sparkline(
       column = `2020-2024 Trend`,
       type = "shaded",
       same_limit = FALSE,
       label = FALSE
     ) |>
-    fmt_number(
+    gt::fmt_number(
       columns = everything(),
       rows = 1:5,
       drop_trailing_zeros = TRUE
     ) |>
-    fmt_percent(
+    gt::fmt_percent(
       columns = everything(),
       rows = 6:9,
       drop_trailing_zeros = TRUE
     ) |>
-    tab_header(
+    gt::tab_header(
       title = "Summary: Trend of Intentional/Unintentional Injury Events in Iowa",
       subtitle = "Patients Seen at a Trauma Center | Data: Iowa Trauma Registry 2020-2024"
     ) |>
-    tab_row_group(label = "Counts", rows = 1:5) |>
-    tab_row_group(label = "Proportion and Change", rows = 6:9) |>
-    row_group_order(groups = c("Counts", "Proportion and Change")) |>
-    tab_footnote(
+    gt::tab_row_group(label = "Counts", rows = 1:5) |>
+    gt::tab_row_group(label = "Proportion and Change", rows = 6:9) |>
+    gt::row_group_order(groups = c("Counts", "Proportion and Change")) |>
+    gt::tab_footnote(
       footnote = "Injury event refers to the number of unique injury incidents that led to evaluation/treatment at a verified trauma center.  Each injury event could involve multiple cases, and each patient may have one or more injury events in a specified timespan.",
       locations = cells_row_groups(groups = "Counts")
     ) |>
-    tab_footnote(
+    gt::tab_footnote(
       footnote = "Refers to the proportion of injuries, or change in count (from previous year), attributed to patients in a given year.",
       locations = cells_row_groups(groups = "Proportion and Change")
     ) |>
-    opt_footnote_marks(marks = "extended") |>
+    gt::opt_footnote_marks(marks = "extended") |>
     tab_style_hhs(border_cols = 2:5)
 }
 
@@ -1252,12 +1252,12 @@ trauma_activation_cases_recent <- trauma_activation_cases |>
 {
   trauma_activation_cases_binary_pivot <- trauma_activation_cases_binary |>
     dplyr::select(-matches("_label")) |>
-    pivot_longer(
+    tidyr::pivot_longer(
       cols = c(Activations:change_non_activations),
       names_to = "Category",
       values_to = "Value"
     ) |>
-    pivot_wider(id_cols = Category, names_from = Year, values_from = Value) |>
+    tidyr::pivot_wider(id_cols = Category, names_from = Year, values_from = Value) |>
     dplyr::mutate(
       `2020-2024 Trend` = list(c(
         `2020`,
@@ -1277,7 +1277,7 @@ trauma_activation_cases_recent <- trauma_activation_cases |>
 {
   trauma_activation_cases_pivot <- trauma_activation_cases |>
     dplyr::select(-matches("label")) |>
-    pivot_wider(
+    tidyr::pivot_wider(
       id_cols = Trauma_Team_Activation_Level,
       names_from = Year,
       values_from = n:change,
@@ -1309,24 +1309,24 @@ trauma_activation_cases_overall_tbl <- {
         TRUE ~ Category
       )
     ) |>
-    gt() |>
-    cols_label(Category = "") |>
-    gt_plt_sparkline(
+    gt::gt() |>
+    gt::cols_label(Category = "") |>
+    gtExtras::gt_plt_sparkline(
       column = `2020-2024 Trend`,
       type = "shaded",
       same_limit = FALSE,
       label = FALSE
     ) |>
-    fmt_percent(rows = 6:8) |>
-    fmt_number(rows = 1:5, drop_trailing_zeros = TRUE) |>
-    tab_header(
+    gt::fmt_percent(rows = 6:8) |>
+    gt::fmt_number(rows = 1:5, drop_trailing_zeros = TRUE) |>
+    gt::tab_header(
       title = "Summary: Trend of Overall Trauma Team Activation Statistics",
       subtitle = "Trauma Center case Data | Data: Iowa Trauma Registry 2020-2024"
     ) |>
-    tab_row_group(label = "Counts", rows = 1:5) |>
-    tab_row_group(label = "Proportion and Change", rows = 6:8) |>
-    row_group_order(groups = c("Counts", "Proportion and Change")) |>
-    tab_source_note(
+    gt::tab_row_group(label = "Counts", rows = 1:5) |>
+    gt::tab_row_group(label = "Proportion and Change", rows = 6:8) |>
+    gt::row_group_order(groups = c("Counts", "Proportion and Change")) |>
+    gt::tab_source_note(
       source_note = md(paste0(
         fontawesome::fa("magnifying-glass"),
         " These data reflect cases, and so include transfers.  Cases are defined as each distinct episode when a patient enters an ED or hospital for treatment of an injury."
@@ -1339,8 +1339,8 @@ trauma_activation_cases_overall_tbl <- {
 
 trauma_activation_cases_tbl <- {
   trauma_activation_cases_pivot |>
-    gt() |>
-    cols_label(
+    gt::gt() |>
+    gt::cols_label(
       Trauma_Team_Activation_Level = "",
       n_2021 = "Count",
       n_2023 = "Count",
@@ -1352,35 +1352,35 @@ trauma_activation_cases_tbl <- {
       change_2023 = "% Change",
       change_2024 = "% Change"
     ) |>
-    gt_plt_sparkline(
+    gtExtras::gt_plt_sparkline(
       column = `2020-2024 Trend`,
       type = "shaded",
       same_limit = FALSE,
       label = FALSE
     ) |>
-    tab_spanner(label = "2021", columns = matches("_2021")) |>
-    tab_spanner(label = "2023", columns = matches("_2023")) |>
-    tab_spanner(label = "2024", columns = matches("_2024")) |>
-    fmt_percent(columns = matches("percent|change")) |>
-    fmt_number(columns = matches("n_"), drop_trailing_zeros = TRUE) |>
-    tab_header(
+    gt::tab_spanner(label = "2021", columns = matches("_2021")) |>
+    gt::tab_spanner(label = "2023", columns = matches("_2023")) |>
+    gt::tab_spanner(label = "2024", columns = matches("_2024")) |>
+    gt::fmt_percent(columns = matches("percent|change")) |>
+    gt::fmt_number(columns = matches("n_"), drop_trailing_zeros = TRUE) |>
+    gt::tab_header(
       title = "Summary: Trend of Trauma Team Activation Level Statistics",
       subtitle = "Trauma Center Case Data | Data: Iowa Trauma Registry 2020-2024"
     ) |>
-    tab_row_group(label = "Non-Activation", rows = c(1, 4:6)) |>
-    tab_row_group(label = "Activation", rows = 2:3) |>
-    row_group_order(groups = c("Activation", "Non-Activation")) |>
-    tab_source_note(
+    gt::tab_row_group(label = "Non-Activation", rows = c(1, 4:6)) |>
+    gt::tab_row_group(label = "Activation", rows = 2:3) |>
+    gt::row_group_order(groups = c("Activation", "Non-Activation")) |>
+    gt::tab_source_note(
       source_note = md(paste0(
         fontawesome::fa("magnifying-glass"),
         " These data reflect cases, and so include transfers.  Cases are defined as each distinct episode when a patient enters an ED or hospital for treatment of an injury."
       ))
     ) |>
-    tab_footnote(
+    gt::tab_footnote(
       footnote = "Reflects trend in % change of case count for each activation level category from 2020-2024.",
       locations = cells_column_labels(columns = `2020-2024 Trend`)
     ) |>
-    opt_footnote_marks(marks = "standard") |>
+    gt::opt_footnote_marks(marks = "standard") |>
     tab_style_hhs(border_cols = matches("n_\\d|trend"))
 }
 
@@ -1473,9 +1473,9 @@ ems_incidents_runs_recent <- ems_incidents_runs |>
 # join the transport runs and incidents table
 
 transport_incidents_runs <- transport_incidents |>
-  rename(Transport_Incidents = n) |>
+  dplyr::rename(Transport_Incidents = n) |>
   dplyr::left_join(
-    transport_runs |> rename(Transport_Runs = n),
+    transport_runs |> dplyr::rename(Transport_Runs = n),
     by = c("Patient_Transported", "Year")
   ) |>
   dplyr::select(-Patient_Transported)
@@ -1571,9 +1571,9 @@ ems_trauma_incidents_runs_recent <- ems_trauma_incidents_runs |>
 # join the ems trauma transport incident and runs tables
 
 ems_trauma_transport_incidents_runs <- ems_trauma_transport_incidents |>
-  rename(Trauma_Transport_Incidents = n) |>
+  dplyr::rename(Trauma_Transport_Incidents = n) |>
   dplyr::left_join(
-    ems_trauma_transport_runs |> rename(Trauma_Transport_Runs = n),
+    ems_trauma_transport_runs |> dplyr::rename(Trauma_Transport_Runs = n),
     by = c("Patient_Transported", "Year")
   ) |>
   dplyr::select(-Patient_Transported)

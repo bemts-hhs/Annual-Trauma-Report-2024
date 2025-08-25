@@ -282,18 +282,24 @@ ggplot2::ggsave(
   width = 9 * (16 / 9)
 )
 
+# get fire/burn and drowning counts for caption in the following plot ----
+fire_burn_drown <- iowa_deaths_cause |>
+  dplyr::filter(
+    Year == 2024,
+    grepl(pattern = "fire|drown", x = Cause, ignore.case = TRUE)
+  ) |>
+  dplyr::select(-Year)
+
 # unintentional trauma deaths by cause in Iowa plot
 iowa_deaths_cause_plot <- iowa_deaths_cause |>
   dplyr::mutate(
     Cause = stringr::str_remove_all(Cause, pattern = "^\\d{2}-"),
+    labels = dplyr::if_else(Year %in% c(2020, 2024), Deaths, NA),
     labels = dplyr::if_else(
-      Year %in% c(2020, 2024) & Deaths >= 6,
-      traumar::pretty_number(Deaths),
-      dplyr::if_else(
-        Year %in% c(2020, 2024) & Deaths < 6,
-        traumar::small_count_label(var = Deaths, cutoff = 6, replacement = "*"),
-        NA_character_
-      )
+      Year == 2024 &
+        grepl(pattern = "fire|drown", x = Cause, ignore.case = TRUE),
+      NA,
+      labels
     )
   ) |>
   ggplot2::ggplot(ggplot2::aes(
@@ -314,7 +320,8 @@ iowa_deaths_cause_plot <- iowa_deaths_cause |>
     family = "Work Sans",
     size = 8,
     color = "black",
-    direction = "both"
+    direction = "both",
+    seed = 10232015
   ) +
   ggplot2::labs(
     x = "",
@@ -322,12 +329,14 @@ iowa_deaths_cause_plot <- iowa_deaths_cause |>
     title = "Iowa Unintentional Trauma Deaths by Cause",
     subtitle = "Source: Iowa Death Certificate Data | 2019-2023",
     color = "Cause of Death",
-    caption = "Note: Order of color legend follows descending order of lines."
+    caption = glue::glue(
+      "Note: Order of color legend follows descending order of lines. || 2024 Fire/burn = {fire_burn_drown[1,2]}, 2024 Drowning = {fire_burn_drown[2,2]}"
+    )
   ) +
   ggplot2::scale_y_continuous(
     labels = function(x) traumar::pretty_number(x)
   ) +
-  ggplot2::scale_color_paletteer_d(
+  paletteer::scale_color_paletteer_d(
     palette = "colorblindr::OkabeIto",
     direction = 1
   ) +
@@ -337,7 +346,8 @@ iowa_deaths_cause_plot <- iowa_deaths_cause |>
     subtitle_text_size = 18,
     vjust_title = 1.75,
     vjust_subtitle = 1,
-    legend_position = "right"
+    legend_position = "right",
+    axis.text.y = ggplot2::element_blank()
   )
 
 # save the iowa_deaths_cause_plot
@@ -345,8 +355,8 @@ ggplot2::ggsave(
   filename = "iowa_deaths_cause_plot.png",
   plot = iowa_deaths_cause_plot,
   path = plot_folder,
-  height = 9,
-  width = 9 * (16 / 9)
+  height = 6,
+  width = 6 * (16 / 9)
 )
 
 # trauma suicides by cause plot
@@ -420,7 +430,7 @@ ggplot2::ggsave(
 # trends in causes of death with 5-year avg
 iowa_death_trends_cause_tbl <- iowa_death_trends_cause |>
   dplyr::arrange(Year, desc(Deaths)) |>
-  dplyr::mutate(Cause = str_remove_all(Cause, pattern = "^\\d{2}-")) |>
+  dplyr::mutate(Cause = stringr::str_remove_all(Cause, pattern = "^\\d{2}-")) |>
   tidyr::pivot_wider(
     id_cols = Cause,
     names_from = Year,
@@ -431,11 +441,10 @@ iowa_death_trends_cause_tbl <- iowa_death_trends_cause |>
     `Five Year Avg.` = mean(`2020`:`2024`, na.rm = TRUE),
     `% Diff. from Five Year Avg.` = (`2024` - `Five Year Avg.`) /
       `Five Year Avg.`,
-    `2019-2023 Trend` = list(c(
-      `2020`,
-      `2019`,
+    `2020-2024 Trend` = list(c(
       `2020`,
       `2021`,
+      `2022`,
       `2023`,
       `2024`
     )),
@@ -446,7 +455,7 @@ iowa_death_trends_cause_tbl <- iowa_death_trends_cause |>
   gt::gt() |>
   gt::tab_header(
     title = "Iowa Trends in Causes of Traumatic Death",
-    subtitle = "Source: Iowa Death Certificate Data | 2019-2023"
+    subtitle = "Source: Iowa Death Certificate Data | 2020-2024"
   ) |>
   gt::cols_label(`2024` = "# Deaths 2024") |>
   gt::fmt_number(
@@ -459,11 +468,11 @@ iowa_death_trends_cause_tbl <- iowa_death_trends_cause |>
   ) |>
   gt::tab_footnote(
     footnote = "Bars under cause of death track with count of deaths in 2024.",
-    locations = cells_column_labels(columns = Cause)
+    locations = gt::cells_column_labels(columns = Cause)
   ) |>
   gt::tab_footnote(
     footnote = "Five year avg. calculated from counts of each cause of death from 2020 through 2024.",
-    locations = cells_column_labels(columns = `Five Year Avg.`)
+    locations = gt::cells_column_labels(columns = `Five Year Avg.`)
   ) |>
   gt::opt_footnote_marks(marks = "standard") |>
   gtExtras::gt_plt_dot(
@@ -472,13 +481,13 @@ iowa_death_trends_cause_tbl <- iowa_death_trends_cause |>
     palette = "colorblindr::OkabeIto"
   ) |>
   gtExtras::gt_plt_sparkline(
-    column = `2019-2023 Trend`,
+    column = `2020-2024 Trend`,
     type = "shaded",
     same_limit = FALSE,
     label = TRUE,
     fig_dim = c(8, 30)
   ) |>
-  tab_style_hhs(border_cols = `2024`:`2019-2023 Trend`)
+  tab_style_hhs(border_cols = `2024`:`2020-2024 Trend`)
 
 # trends in unintentional and suicide poisonings
 iowa_death_poisoning_plot <- iowa_death_poisoning |>
