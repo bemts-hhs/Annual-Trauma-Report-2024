@@ -18,6 +18,23 @@
 
   patient_count_years <- trauma_data_clean |>
     injury_patient_count(Year, descriptive_stats = TRUE)
+
+  patients_gt <- patient_count_years |>
+    gt::gt() |>
+    gt::cols_hide(prop_change) |>
+    gt::cols_label(
+      "n" ~ "Count",
+      "change" ~ "Count Change",
+      "prop_label" ~ "% Change"
+    ) |>
+    gt::sub_missing() |>
+    tab_style_hhs(message_text = NULL, border_cols = 2:last_col())
+
+  gt::gtsave(
+    patients_gt,
+    filename = "patients_gt.png",
+    path = plot_folder
+  )
 }
 
 # injuries
@@ -28,6 +45,23 @@
 
   incident_count_years <- trauma_data_clean |>
     injury_incident_count(Year, descriptive_stats = TRUE)
+
+  incidents_gt <- incident_count_years |>
+    gt::gt() |>
+    gt::cols_hide(columns = c(prop_change, Min_Reinjury:Q75_Reinjury)) |>
+    gt::cols_label(
+      "n" ~ "Count",
+      "change" ~ "Count Change",
+      "prop_label" ~ "% Change"
+    ) |>
+    gt::sub_missing() |>
+    tab_style_hhs(message_text = NULL, border_cols = 2:last_col())
+
+  gt::gtsave(
+    incidents_gt,
+    filename = "incidents_gt.png",
+    path = plot_folder
+  )
 }
 
 # cases
@@ -38,6 +72,23 @@
 
   case_count_years <- trauma_data_clean |>
     injury_case_count(Year, descriptive_stats = TRUE)
+
+  cases_gt <- case_count_years |>
+    gt::gt() |>
+    gt::cols_hide(prop_change) |>
+    gt::cols_label(
+      "n" ~ "Count",
+      "change" ~ "Count Change",
+      "prop_label" ~ "% Change"
+    ) |>
+    gt::sub_missing() |>
+    tab_style_hhs(message_text = NULL, border_cols = 2:last_col())
+
+  gt::gtsave(
+    cases_gt,
+    filename = "cases_gt.png",
+    path = plot_folder
+  )
 }
 
 ###_____________________________________________________________________________
@@ -1082,7 +1133,11 @@ intentionality_of_injury_pivot <- intentionality_of_injury |>
     names_to = "Category",
     values_to = "Vals"
   ) |>
-  tidyr::pivot_wider(id_cols = Category, names_from = Year, values_from = Vals) |>
+  tidyr::pivot_wider(
+    id_cols = Category,
+    names_from = Year,
+    values_from = Vals
+  ) |>
   tidyr::replace_na(list(`2020` = 0)) |>
   dplyr::mutate(
     `2020-2024 Trend` = list(c(`2020`, `2019`, `2020`, `2021`, `2023`, `2024`)),
@@ -1257,7 +1312,11 @@ trauma_activation_cases_recent <- trauma_activation_cases |>
       names_to = "Category",
       values_to = "Value"
     ) |>
-    tidyr::pivot_wider(id_cols = Category, names_from = Year, values_from = Value) |>
+    tidyr::pivot_wider(
+      id_cols = Category,
+      names_from = Year,
+      values_from = Value
+    ) |>
     dplyr::mutate(
       `2020-2024 Trend` = list(c(
         `2020`,
