@@ -1068,16 +1068,16 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
   ###   - For each Year, compute the share of `cases` among total cases that year
   ###   - Provide both numeric proportion and formatted label
   ###_____________________________________________________________________________
-  case_mutate <- function(df) {
+  case_mutate <- function(df, col, group) {
     out <- df |>
       dplyr::mutate(
         # Total cases in the same Year; protect against zero to avoid division by zero
-        total_cases = sum(cases, na.rm = TRUE),
+        total_cases = sum({{ col }}, na.rm = TRUE),
 
         # Proportion of cases within the year; if total is zero, set NA
         percent = dplyr::if_else(
           total_cases > 0,
-          cases / total_cases,
+          {{ col }} / total_cases,
           NA_real_
         ),
 
@@ -1089,7 +1089,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
         ),
 
         # Operate by Year so sums and proportions are scoped correctly
-        .by = Year
+        .by = {{ group }}
       ) |>
       # Drop the temporary total_cases column used for computation
       dplyr::select(-total_cases)
@@ -1100,20 +1100,24 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
   ###_____________________________________________________________________________
   ### Helper to add within-year injury event proportions and labels
   ### Input:
-  ###   - df: tibble with at least columns Year and Injury_Events
+  ###   - df: tibble with at least columns Year and col
   ### Behavior:
-  ###   - For each Year, compute the share of Injury_Events and format it
+  ###   - For each Year, compute the share of col and format it
   ###_____________________________________________________________________________
-  injury_mutate <- function(df) {
+  injury_mutate <- function(df, col, group) {
     out <- df |>
       dplyr::mutate(
         # Total injury events in the same Year; guard against zero
-        total_injuries = sum(Injury_Events, na.rm = TRUE),
+        total_injuries = sum(
+          {{ col }},
+          na.rm = TRUE
+        ),
 
         # Proportion of injury events within the year
         percent = dplyr::if_else(
           total_injuries > 0,
-          Injury_Events / total_injuries,
+          {{ col }} /
+            total_injuries,
           NA_real_
         ),
 
@@ -1124,7 +1128,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
           NA_character_
         ),
 
-        .by = Year
+        .by = {{ group }}
       ) |>
       dplyr::select(-total_injuries)
 
