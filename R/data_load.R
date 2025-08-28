@@ -302,11 +302,7 @@ trauma_2024 <- trauma_data_clean |> dplyr::filter(Year == 2024)
 dplyr::glimpse(trauma_2024)
 
 ### ems data ----
-ems_raw <- readr::read_csv(file = ems_data_path)
-
-# union the ems data
-ems_data <- ems_raw |>
-  dplyr::filter(Year %in% 2020:2024)
+ems_data <- readr::read_csv(file = ems_data_path)
 
 # deal with missing injury categories
 ems_data_clean <- ems_data |>
