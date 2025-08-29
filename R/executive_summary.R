@@ -1558,6 +1558,7 @@ ems_incidents_runs_recent <- ems_incidents_runs |>
 {
   transport_incidents <- ems_data_clean |>
     dplyr::filter(Scene_First_EMS_Unit_On_Scene == "Yes") |>
+    dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
     dplyr::count(Year, Patient_Transported) |>
     dplyr::filter(Patient_Transported == T) |>
     dplyr::left_join(
@@ -1609,8 +1610,7 @@ transport_incidents_runs_recent <- transport_incidents_runs |>
   ems_trauma_incidents <- ems_data_clean |>
     dplyr::filter(
       Trauma_Flag == "Yes",
-      Scene_First_EMS_Unit_On_Scene == "Yes",
-      Year < 2024
+      Scene_First_EMS_Unit_On_Scene == "Yes"
     ) |>
     dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
     dplyr::count(Year, name = "Incidents") |>
@@ -1625,7 +1625,7 @@ transport_incidents_runs_recent <- transport_incidents_runs |>
 
 {
   ems_trauma_runs <- ems_data_clean |>
-    dplyr::filter(Trauma_Flag == "Yes", Year < 2024) |>
+    dplyr::filter(Trauma_Flag == "Yes") |>
     dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
     dplyr::count(Year, name = "Runs") |>
     dplyr::mutate(
@@ -1650,8 +1650,7 @@ ems_trauma_incidents_runs_recent <- ems_trauma_incidents_runs |>
   ems_trauma_transport_incidents <- ems_data_clean |>
     dplyr::filter(
       Trauma_Flag == "Yes",
-      Scene_First_EMS_Unit_On_Scene == "Yes",
-      Year < 2024
+      Scene_First_EMS_Unit_On_Scene == "Yes"
     ) |>
     dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
     dplyr::count(Year, Patient_Transported) |>
@@ -1660,10 +1659,16 @@ ems_trauma_incidents_runs_recent <- ems_trauma_incidents_runs |>
       ems_trauma_incidents |> dplyr::select(Year, Incidents),
       by = "Year"
     ) |>
+    dplyr::left_join(
+      transport_incidents |> dplyr::select(Year, n_transports = n),
+      by = dplyr::join_by(Year),
+      suffix = c("_trauma", "_transport")
+    ) |>
     dplyr::mutate(
       percent_trauma_transport_incidents = n / Incidents,
       change_trauma_transport_incidents = (Incidents - dplyr::lag(Incidents)) /
-        dplyr::lag(Incidents)
+        dplyr::lag(Incidents),
+      percent_trauma_total_transports = n / n_transports
     )
 }
 
@@ -1671,7 +1676,7 @@ ems_trauma_incidents_runs_recent <- ems_trauma_incidents_runs |>
 
 {
   ems_trauma_transport_runs <- ems_data_clean |>
-    dplyr::filter(Trauma_Flag == "Yes", Year < 2024) |>
+    dplyr::filter(Trauma_Flag == "Yes") |>
     dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
     dplyr::count(Year, Patient_Transported) |>
     dplyr::filter(Patient_Transported == T) |>
@@ -1679,10 +1684,15 @@ ems_trauma_incidents_runs_recent <- ems_trauma_incidents_runs |>
       ems_trauma_runs |> dplyr::select(Year, Runs),
       by = "Year"
     ) |>
+    dplyr::left_join(
+      transport_runs |> dplyr::select(Year, n_transports = n),
+      by = dplyr::join_by(Year)
+    ) |>
     dplyr::mutate(
       percent_trauma_transport_runs = n / Runs,
       change_trauma_transport_runs = (Runs - dplyr::lag(Runs)) /
-        dplyr::lag(Runs)
+        dplyr::lag(Runs),
+      percent_trauma_total_transport_runs = n / n_transports
     )
 }
 
@@ -1692,7 +1702,8 @@ ems_trauma_transport_incidents_runs <- ems_trauma_transport_incidents |>
   dplyr::rename(Trauma_Transport_Incidents = n) |>
   dplyr::left_join(
     ems_trauma_transport_runs |> dplyr::rename(Trauma_Transport_Runs = n),
-    by = c("Patient_Transported", "Year")
+    by = c("Patient_Transported", "Year"),
+    suffix = c("_incidents", "_runs")
   ) |>
   dplyr::select(-Patient_Transported)
 
