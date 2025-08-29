@@ -63,7 +63,7 @@ top_10_causes_us_plot <- death_cdc_wonder_nation_all_2019_2023_aggregate |>
     x = "",
     y = "",
     title = "Top 10 Causes of Death Among All Age Groups in the U.S.",
-    subtitle = "Source: CDC WONDER | 2019-2023",
+    subtitle = "Source: CDC WONDER | 2020-2024",
     caption = "Note: 2023 data used in this report via CDC WONDER are complete.",
     fill = "# Deaths"
   ) +
@@ -109,7 +109,7 @@ death_cdc_wisqars_all_1_44_tbl <- death_cdc_wonder_nation_1_44_2019_2023_aggrega
   gt::gt() |>
   gt::tab_header(
     title = "Top 10 Causes of Death Among Persons Ages 1-44 in the U.S.",
-    subtitle = "Source: CDC WONDER | 2019-2023"
+    subtitle = "Source: CDC WONDER | 2020-2024"
   ) |>
   gt::tab_source_note(
     source_note = gt::md(paste0(
@@ -120,7 +120,7 @@ death_cdc_wisqars_all_1_44_tbl <- death_cdc_wonder_nation_1_44_2019_2023_aggrega
   gt::tab_source_note(
     source_note = gt::md(paste0(
       fontawesome::fa("sticky-note"),
-      " Injuries remain in the leading causes of death for the years 2019-2023 in the U.S."
+      " Injuries remain in the leading causes of death for the years 2020-2024 in the U.S."
     ))
   ) |>
   gt::tab_footnote(
@@ -149,6 +149,13 @@ death_cdc_wisqars_all_1_44_tbl <- death_cdc_wonder_nation_1_44_2019_2023_aggrega
     pattern = "{1} ({2}&mdash;{3})"
   ) |>
   tab_style_hhs(border_cols = c(Deaths, `Age Adjusted Rate`))
+
+# save the gt table
+gt::gtsave(
+  data = death_cdc_wisqars_all_1_44_tbl,
+  filename = "death_cdc_wisqars_all_1_44_tbl.png",
+  path = plot_folder
+)
 
 # top 5 causes of death in Iowa
 top_5_causes_iowa_plot <- death_cdc_wonder_iowa_all_2023 |>
@@ -209,6 +216,7 @@ ggplot2::ggsave(
   filename = "top_5_causes_iowa_plot.png",
   plot = top_5_causes_iowa_plot,
   path = plot_folder,
+  height = 6,
   width = 8
 )
 
@@ -253,7 +261,7 @@ iowa_deaths_intentionality_plot <- iowa_deaths_intentionality |>
     x = "",
     y = "",
     title = "Iowa Trauma Deaths by Intentionality",
-    subtitle = "Source: Iowa Death Certificate Data | 2019-2023",
+    subtitle = "Source: Iowa Death Certificate Data | 2020-2024",
     color = "Intentionality",
     caption = "Note: Order of color legend follows descending order of lines.\n'*' indicates a masked value < 6 to protect confidentiality."
   ) +
@@ -278,8 +286,8 @@ ggplot2::ggsave(
   filename = "iowa_deaths_intentionality_plot.png",
   plot = iowa_deaths_intentionality_plot,
   path = plot_folder,
-  height = 9,
-  width = 9 * (16 / 9)
+  height = 6,
+  width = 8
 )
 
 # get fire/burn and drowning counts for caption in the following plot ----
@@ -327,7 +335,7 @@ iowa_deaths_cause_plot <- iowa_deaths_cause |>
     x = "",
     y = "",
     title = "Iowa Unintentional Trauma Deaths by Cause",
-    subtitle = "Source: Iowa Death Certificate Data | 2019-2023",
+    subtitle = "Source: Iowa Death Certificate Data | 2020-2024",
     color = "Cause of Death",
     caption = glue::glue(
       "Note: Order of color legend follows descending order of lines. || 2024 Fire/burn = {fire_burn_drown[1,2]}, 2024 Drowning = {fire_burn_drown[2,2]}"
@@ -356,28 +364,19 @@ ggplot2::ggsave(
   plot = iowa_deaths_cause_plot,
   path = plot_folder,
   height = 6,
-  width = 6 * (16 / 9)
+  width = 8
 )
 
 # trauma suicides by cause plot
 iowa_suicides_cause_plot <- iowa_suicides_cause |>
   dplyr::mutate(
-    Cause = str_remove_all(Cause, pattern = "^\\d{2}-"),
-    labels = dplyr::if_else(
-      Year %in% c(2020, 2024) & Deaths >= 6,
-      traumar::pretty_number(Deaths),
-      dplyr::if_else(
-        Year %in% c(2020, 2024) & Deaths < 6,
-        small_count_label(var = Deaths, cutoff = 6, replacement = "*"),
-        NA_character_
-      )
-    )
+    Cause = stringr::str_remove_all(Cause, pattern = "^\\d{2}-")
   ) |>
   ggplot2::ggplot(ggplot2::aes(
     x = factor(Year),
     y = Deaths,
     color = reorder(Cause, -Deaths),
-    label = labels,
+    label = Deaths,
     group = Cause
   )) +
   ggplot2::geom_line(
@@ -397,14 +396,14 @@ iowa_suicides_cause_plot <- iowa_suicides_cause |>
     x = "",
     y = "",
     title = "Iowa Trauma Suicide Deaths by Cause",
-    subtitle = "Source: Iowa Death Certificate Data | 2019-2023",
+    subtitle = "Source: Iowa Death Certificate Data | 2020-2024",
     color = "Cause",
     caption = "Note: Order of color legend follows descending order of lines."
   ) +
   ggplot2::scale_y_continuous(
     labels = function(x) traumar::pretty_number(x)
   ) +
-  ggplot2::scale_color_paletteer_d(
+  paletteer::scale_color_paletteer_d(
     palette = "colorblindr::OkabeIto",
     direction = 1
   ) +
@@ -423,8 +422,8 @@ ggplot2::ggsave(
   filename = "iowa_suicides_cause_plot.png",
   plot = iowa_suicides_cause_plot,
   path = plot_folder,
-  height = 9,
-  width = 9 * (16 / 9)
+  height = 6,
+  width = 8
 )
 
 # trends in causes of death with 5-year avg
@@ -489,6 +488,13 @@ iowa_death_trends_cause_tbl <- iowa_death_trends_cause |>
   ) |>
   tab_style_hhs(border_cols = `2024`:`2020-2024 Trend`)
 
+# save the table
+gt::gtsave(
+  data = iowa_death_trends_cause_tbl,
+  filename = "iowa_death_trends_cause_tbl.png",
+  path = plot_folder
+)
+
 # trends in unintentional and suicide poisonings
 iowa_death_poisoning_plot <- iowa_death_poisoning |>
   dplyr::arrange(Cause, Year) |>
@@ -513,16 +519,16 @@ iowa_death_poisoning_plot <- iowa_death_poisoning |>
     y = mean(iowa_death_poisoning$Deaths),
     yend = mean(iowa_death_poisoning$Deaths),
     linetype = "dashed",
-    color = hhs_palette_1$primary_1,
+    color = "#03617A",
     alpha = 0.75
   ) +
   ggplot2::annotate(
     geom = "text",
-    x = 2019,
-    xend = 2019,
+    x = 2022,
+    xend = 2022,
     y = mean(iowa_death_poisoning$Deaths) + 15,
     yend = mean(iowa_death_poisoning$Deaths) + 15,
-    color = hhs_palette_1$primary_1,
+    color = "#03617A",
     alpha = 0.75,
     fontface = "bold",
     family = "Work Sans",
@@ -545,11 +551,11 @@ iowa_death_poisoning_plot <- iowa_death_poisoning |>
   ) +
   ggplot2::labs(
     title = "Trends in Iowa Poisoning Deaths",
-    subtitle = "Source: Iowa Death Certificate Data | 2019-2023",
+    subtitle = "Source: Iowa Death Certificate Data | 2020-2024",
     x = "",
     y = "# Deaths\n"
   ) +
-  ggplot2::scale_color_paletteer_d(palette = "colorblindr::OkabeIto") +
+  paletteer::scale_color_paletteer_d(palette = "colorblindr::OkabeIto") +
   traumar::theme_cleaner(
     base_size = 15,
     title_text_size = 20,
@@ -564,6 +570,6 @@ ggplot2::ggsave(
   filename = "iowa_death_poisoning_plot.png",
   plot = iowa_death_poisoning_plot,
   path = plot_folder,
-  height = 9,
-  width = 9 * (16 / 9)
+  height = 6,
+  width = 8
 )

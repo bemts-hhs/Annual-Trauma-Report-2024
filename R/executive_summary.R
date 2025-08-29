@@ -99,16 +99,28 @@
   incident_count_years <- trauma_data_clean |>
     injury_incident_count(Year, descriptive_stats = TRUE)
 
-  # a bar graph
-  patient_count_plot <- patient_count_years |>
+  # a line graph
+  incident_count_plot <- incident_count_years |>
     ggplot2::ggplot(ggplot2::aes(
       x = Year,
       y = n,
-      label = traumar::pretty_number(x = n, n_decimal = 2)
+      label = ifelse(
+        Year %in% c(2020, 2024),
+        traumar::pretty_number(x = n, n_decimal = 2),
+        NA
+      )
     )) +
-    ggplot2::geom_col(fill = "lightgray", width = 0.75) +
-    ggplot2::geom_text(
-      ggplot2::aes(y = 750),
+    ggplot2::geom_line(
+      linewidth = 1.75,
+      color = "lightblue",
+      lineend = "round",
+      linejoin = "round"
+    ) +
+    ggrepel::geom_text_repel(
+      nudge_y = -250,
+      segment.color = "transparent",
+      seed = 8182023,
+      direction = "both",
       color = "darkblue",
       size = 10,
       fontface = "bold",
@@ -120,14 +132,20 @@
       axis.text.y = ggplot2::element_blank(),
       axis.text.x = ggplot2::element_text(size = 30)
     ) +
-    ggplot2::scale_y_continuous(labels = function(x) traumar::pretty_number(x))
+    ggplot2::scale_y_continuous(labels = function(x) {
+      traumar::pretty_number(x, n_decimal = 2)
+    })
 
+  # save the incident plot
   ggplot2::ggsave(
-    filename = "patient_count_plot.png",
-    plot = patient_count_plot,
-    path = plot_folder
+    filename = "incident_count_plot.png",
+    plot = incident_count_plot,
+    path = plot_folder,
+    height = 6,
+    width = 6 * (16 / 9)
   )
 
+  # generate the incident table
   incidents_gt <- incident_count_years |>
     gt::gt() |>
     gt::cols_hide(columns = c(prop_change, Min_Reinjury:Q75_Reinjury)) |>
@@ -1492,39 +1510,44 @@ trauma_activation_cases_recent <- trauma_activation_cases |>
 ###_____________________________________________________________________________
 
 # Get unique count of incidents
-
 {
   ems_incidents <- ems_data_clean |>
-    dplyr::filter(Scene_First_EMS_Unit_On_Scene == "Yes", Year < 2024) |>
+    dplyr::filter(Scene_First_EMS_Unit_On_Scene == "Yes") |>
     dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
     dplyr::count(Year, name = "Incidents") |>
     dplyr::mutate(
       change_incident = (Incidents - dplyr::lag(Incidents)) /
         dplyr::lag(Incidents),
-      change_incident_label = traumar::pretty_percent(change_incident)
+      change_incident_label = ifelse(
+        is.na(change_incident),
+        NA_character_,
+        traumar::pretty_percent(change_incident)
+      )
     )
 }
 
 # get a unique count of total resources used
-
 {
   ems_runs <- ems_data_clean |>
-    dplyr::filter(Year < 2024) |>
     dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
     dplyr::count(Year, name = "Runs") |>
     dplyr::mutate(
       change_runs = (Runs - dplyr::lag(Runs)) / dplyr::lag(Runs),
-      change_runs_label = traumar::pretty_percent(change_runs)
+      change_runs_label = ifelse(
+        is.na(change_runs),
+        NA_character_,
+        traumar::pretty_percent(change_runs)
+      )
     )
 }
 
 # bind columns of the incidents and runs table
 
 ems_incidents_runs <- ems_incidents |>
-  dplyr::left_join(ems_runs, by = "Year")
+  dplyr::left_join(ems_runs, by = "Year") |>
+  dplyr::mutate(incident_run_ratio = Runs / Incidents)
 
 # ems incidents for printing
-
 ems_incidents_runs_recent <- ems_incidents_runs |>
   dplyr::filter(Year %in% 2023:2024)
 
@@ -1534,12 +1557,11 @@ ems_incidents_runs_recent <- ems_incidents_runs |>
 
 {
   transport_incidents <- ems_data_clean |>
-    dplyr::filter(Scene_First_EMS_Unit_On_Scene == "Yes", Year < 2024) |>
+    dplyr::filter(Scene_First_EMS_Unit_On_Scene == "Yes") |>
     dplyr::count(Year, Patient_Transported) |>
     dplyr::filter(Patient_Transported == T) |>
     dplyr::left_join(
       ems_incidents |>
-        dplyr::filter(Year < 2024) |>
         dplyr::select(Year, Incidents),
       by = "Year"
     ) |>
@@ -1553,12 +1575,11 @@ ems_incidents_runs_recent <- ems_incidents_runs |>
 
 {
   transport_runs <- ems_data_clean |>
-    dplyr::filter(Year < 2024) |>
     dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
     dplyr::count(Year, Patient_Transported) |>
     dplyr::filter(Patient_Transported == T) |>
     dplyr::left_join(
-      ems_runs |> dplyr::filter(Year < 2024) |> dplyr::select(Year, Runs),
+      ems_runs |> dplyr::select(Year, Runs),
       by = "Year"
     ) |>
     dplyr::mutate(
