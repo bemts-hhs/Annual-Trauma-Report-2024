@@ -162,7 +162,6 @@ ipop_age_dist_bar <- ipop_age_dist |>
   viridis::scale_fill_viridis(option = "rocket", direction = -1)
 
 # save the treemap
-
 ggplot2::ggsave(
   filename = "ipop_age_dist_bar.png",
   plot = ipop_age_dist_bar,
