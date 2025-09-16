@@ -539,6 +539,7 @@ ggplot2::ggsave(
 # additional cause of injury frequency df ----
 injuries_not_needed_pattern <- c("fall|motor|mvc|firearm|struck")
 
+# cause of injury frequency among non-falls, non-mvc, non-firearm, non-struck by ----
 cause_of_injury_additional_freq <- trauma_2024 |>
   dplyr::filter(
     !is.na(LEVEL_FALL1_1),
@@ -548,15 +549,20 @@ cause_of_injury_additional_freq <- trauma_2024 |>
       ignore.case = TRUE
     )
   ) |>
-  injury_case_count(LEVEL_FALL1_1, sort = TRUE) |>
+  injury_case_count(LEVEL_FALL1_1) |>
+  dplyr::arrange(desc(n)) |>
   dplyr::mutate(
-    LEVEL_FALL1_1 = case_when(
+    LEVEL_FALL1_1 = dplyr::case_when(
       LEVEL_FALL1_1 == "Other Specified, Unintentional" ~ "Other-Unintentional",
       LEVEL_FALL1_1 == "Other Specified, Assault" ~ "Other-Assault",
       LEVEL_FALL1_1 == "Poisoning, Non-Drug" ~ "Poisoning Non-Drug",
       TRUE ~ LEVEL_FALL1_1
     ),
-    number_label = small_count_label(var = n, cutoff = 6, replacement = "*"),
+    number_label = traumar::small_count_label(
+      var = n,
+      cutoff = 6,
+      replacement = "*"
+    ),
     full_label = dplyr::if_else(
       n < 50,
       paste0(LEVEL_FALL1_1, " (", number_label, ")"),
@@ -580,96 +586,93 @@ cause_of_injury_additional_freq_plots <- cause_of_injury_additional_freq |>
     fontface = "bold"
   ) +
   ggplot2::guides(fill = "none") +
-  ggplot2::labs(
-    title = "Cause of Injury Frequency with Expanded Categories",
-    subtitle = "Source: Iowa ImageTrend Patient Registry | 2024",
-    caption = "Read the order of factors by changing color and box area, signaling decreasing count, from the bottom left to top right.\nThese data reflect cases, and so include transfers.  Cases are defined as each distinct episode when a patient enters an ED or hospital\nfor treatment of an injury."
-  ) +
   traumar::theme_cleaner(
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    base_size = 15,
-    vjust_title = 2,
-    vjust_subtitle = 1
+    base_size = 30
   ) +
-  ggplot2::scale_fill_viridis(option = "cividis", direction = -1)
+  viridis::scale_fill_viridis(option = "cividis", direction = -1)
 
-# save the plot ----
-
+# save the plot on additional cause of injury frequency ----
 ggplot2::ggsave(
   filename = "cause_of_injury_additional_freq_plots.png",
   plot = cause_of_injury_additional_freq_plots,
-  path = plot_folder
+  path = plot_folder,
+  height = 7,
+  width = 7 * 1.78
 )
 
 
 # transfers out by trauma level df ----
-
 transfers_out_by_trauma_lvl <- trauma_2024 |>
-  dplyr::filter(Transfer_Out == "Yes") |>
+  dplyr::filter(Acute_Transfer_Out == "Yes") |>
   injury_case_count(Level) |>
+  dplyr::arrange(desc(n)) |>
   dplyr::mutate(
     number_label = prettyNum(n, big.mark = ","),
-    full_label = paste0(Level, " (", number_label, ")"),
     size_mod = log(n)
   )
 
-
 # transfers out by trauma level plot ----
-
 transfers_out_by_trauma_lvl_plot <- transfers_out_by_trauma_lvl |>
-  ggplot2::ggplot(ggplot2::aes(Level, n, fill = Level, label = full_label)) +
+  ggplot2::ggplot(ggplot2::aes(
+    x = reorder(x = Level, X = n),
+    y = n,
+    fill = Level,
+    label = number_label
+  )) +
   ggplot2::geom_point(
     shape = 21,
     color = "black",
-    size = 6 * transfers_out_by_trauma_lvl$size_mod
+    size = 5 * transfers_out_by_trauma_lvl$size_mod
   ) +
-  ggplot2::geom_text(
+  ggrepel::geom_text_repel(
+    direction = "x",
+    nudge_y = ifelse(
+      transfers_out_by_trauma_lvl$n > 4000,
+      950,
+      ifelse(
+        transfers_out_by_trauma_lvl$n > 1000,
+        800,
+        ifelse(transfers_out_by_trauma_lvl$n > 200, 550, 400)
+      )
+    ),
     family = "Work Sans",
-    size = 7,
+    size = 15,
     fontface = "bold",
-    color = "white"
+    color = "black",
+    seed = 10232015,
+    segment.color = "transparent"
   ) +
   ggplot2::coord_flip() +
   ggplot2::guides(color = "none", size = "none", fill = "none") +
   ggplot2::labs(
-    title = "Cases Transferring Out by Trauma Verification Level",
-    subtitle = "Source: Iowa ImageTrend Patient Registry | 2024",
     x = "",
-    y = "Case Count",
-    caption = "These data reflect cases, and so include transfers.  Cases are defined as each distinct episode when a patient enters an ED or hospital\nfor treatment of an injury."
+    y = "Cases"
   ) +
   traumar::theme_cleaner(
-    base_size = 15,
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1,
-    axis.text.y = element_blank()
-  ) +
-  ggplot2::scale_y_continuous(
-    labels = function(x) traumar::pretty_number(x, n_decimal = 1),
-    limits = c(-100, 5000)
+    base_size = 30,
+    axis.text.x = ggplot2::element_blank()
   ) +
   ggthemes::scale_fill_colorblind()
 
 # save the plot of transfer cases ----
 ggplot2::ggsave(
-  filename = "transfers_out_by_trauma_lvl_plot.png",
+  filename = "acute_transfers_out_by_trauma_lvl_plot.png",
   plot = transfers_out_by_trauma_lvl_plot,
-  path = plot_folder
+  path = plot_folder,
+  height = 7,
+  width = 7 * 1.78
 )
 
 # transfer delays among patients being transferred out df ----
 
 # source df to get reference values ----
 transfer_delays_transfer_out <- trauma_2024 |>
-  dplyr::filter(Transfer_Out == "Yes") |>
+  dplyr::filter(Acute_Transfer_Out == "Yes") |>
   tidyr::replace_na(list(Transfer_Delay_Reason = "Not Applicable")) |>
   dplyr::mutate(
     Transfer_Delay_Reason = dplyr::if_else(
       grepl(
-        pattern = "select|not\\sknown|not\\sapplicable",
+        pattern = "select|not\\s(?:known|applicable|recorded|reporting|available|stated|performed)",
         x = Transfer_Delay_Reason,
         ignore.case = TRUE
       ),
@@ -677,7 +680,8 @@ transfer_delays_transfer_out <- trauma_2024 |>
       Transfer_Delay_Reason
     )
   ) |>
-  injury_case_count(Transfer_Delay_Reason, sort = TRUE) |>
+  injury_case_count(Transfer_Delay_Reason) |>
+  dplyr::arrange(desc(n)) |>
   dplyr::mutate(
     number_label = prettyNum(n, big.mark = ","),
     size_mod = log(n)
@@ -685,29 +689,29 @@ transfer_delays_transfer_out <- trauma_2024 |>
 
 # df for plotting ----
 transfer_delays_transfer_out_main <- transfer_delays_transfer_out |>
-  dplyr::filter(Transfer_Delay_Reason %not_in% c("Missing", "Other"))
-
+  dplyr::filter(!Transfer_Delay_Reason %in% c("Missing", "Other"))
 
 # get the 'missing' and 'other' values for the transfer delay reasons ----
 missing_transfer_delays <- transfer_delays_transfer_out |>
   dplyr::filter(Transfer_Delay_Reason == "Missing") |>
-  dplyr::pull(n)
+  dplyr::pull(n) |>
+  prettyNum(big.mark = ",")
 
 other_transfer_delays <- transfer_delays_transfer_out |>
   dplyr::filter(Transfer_Delay_Reason == "Other") |>
-  dplyr::pull(n)
-
+  dplyr::pull(n) |>
+  prettyNum(big.mark = ",")
 
 # transfer delays among patients being transferred out plot ----
 transfer_delays_transfer_out_plot <- transfer_delays_transfer_out_main |>
   dplyr::mutate(
-    Transfer_Delay_Reason = case_when(
+    Transfer_Delay_Reason = dplyr::case_when(
       Transfer_Delay_Reason ==
         "Delayed identification that the patient needed trauma center resources" ~
         "Delayed identification of Pt. need",
       TRUE ~ Transfer_Delay_Reason
     ),
-    Transfer_Delay_Reason = str_replace_all(
+    Transfer_Delay_Reason = stringr::str_replace_all(
       Transfer_Delay_Reason,
       pattern = "[Pp]atient",
       replacement = "Pt."
@@ -717,51 +721,23 @@ transfer_delays_transfer_out_plot <- transfer_delays_transfer_out_main |>
     reorder(Transfer_Delay_Reason, n),
     n,
     fill = n,
-    label = small_count_label(var = n, cutoff = 6, replacement = "*")
+    label = traumar::small_count_label(var = n, cutoff = 6, replacement = "*")
   )) +
-  ggplot2::geom_col(color = "black", width = 0.5) +
-  ggplot2::geom_text(
-    nudge_y = dplyr::if_else(
-      transfer_delays_transfer_out_main$n > 100,
-      transfer_delays_transfer_out_main$size_mod * 2.5,
-      dplyr::if_else(
-        transfer_delays_transfer_out_main$n < 100 &
-          transfer_delays_transfer_out_main$n > 10,
-        transfer_delays_transfer_out_main$size_mod * 3,
-        8
-      )
-    ),
-    family = "Work Sans",
-    size = 8,
-    fontface = "bold",
-    color = "black"
-  ) +
+  ggplot2::geom_col(width = 0.5) +
   ggplot2::coord_flip() +
   ggplot2::guides(fill = "none") +
   ggplot2::labs(
-    title = "Transfer Delay Reasons Among Patients Being Transferred Out",
-    subtitle = "Source: Iowa ImageTrend Patient Registry | 2024",
-    caption = paste0(
-      "- '*' indicates small counts that are masked to protect confidentiality\n- These data reflect cases.  Cases are defined as each distinct episode when a patient\n   enters an ED or hospital for treatment of an injury.",
-      "\n- There were ",
-      prettyNum(missing_transfer_delays, big.mark = ","),
-      " cases that were not delayed or were missing a category, and ",
-      other_transfer_delays,
-      "\n   marked as 'other.'"
+    caption = glue::glue(
+      "- There were { prettyNum(missing_transfer_delays, big.mark = ",
+      ") }, cases that were not delayed or were\nmissing a category, and { other_transfer_delays } marked as 'other.'"
     ),
     x = "",
-    y = "Case Count\n"
+    y = ""
   ) +
-  ggplot2::scale_fill_viridis(option = "magma", direction = -1) +
-  ggplot2::scale_y_continuous(
-    labels = function(x) traumar::pretty_number(x, n_decimal = 1)
-  ) +
+  viridis::scale_fill_viridis(option = "magma", direction = -1) +
+  ggplot2::scale_y_continuous(labels = function(x) traumar::pretty_number(x)) +
   traumar::theme_cleaner(
-    base_size = 15,
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1
+    base_size = 18
   )
 
 # save the transfer delay reason plot ----
@@ -771,12 +747,16 @@ ggplot2::ggsave(
   path = plot_folder
 )
 
+# median ED stay prior to transfer by ISS range df ----
+# prep data ----
+prep_trauma_data <- trauma_2024 |>
+  dplyr::filter(Acute_Transfer_Out == "Yes") |>
+  dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE)
 
-# average ED stay prior to transfer by ISS range df ----
-avg_ed_stay_transfers_iss <- trauma_2024 |>
-  dplyr::filter(Transfer_Out == "Yes") |>
-  dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
-  dplyr::mutate(
+# use tidymodels to create a recipe to handle missing values and outliers
+# create a recipe for imputing and outlier handling ----
+trauma_recipe <- recipes::recipe(~., data = prep_trauma_data) |>
+  recipes::step_mutate(
     Trauma_Team_Activated = factor(
       Trauma_Team_Activated,
       levels = c("Trauma Team Activated", "Trauma Team Not Activated"),
@@ -786,42 +766,101 @@ avg_ed_stay_transfers_iss <- trauma_2024 |>
       ISS_Range,
       levels = c("1 - 8", "9 - 15", "16+"),
       labels = c("1-8", "9-15", "16+")
-    ),
+    )
+  ) |>
+  recipes::step_zv(recipes::all_predictors()) |>
+  recipes::step_nzv(recipes::all_predictors()) |>
+  recipes::step_impute_knn(Length_of_Stay, neighbors = 5) # KNN imputation
+
+# prep and bake the recipe ----
+trauma_data_processed <- trauma_recipe |>
+  recipes::prep() |>
+  recipes::bake(new_data = NULL) |>
+  dplyr::mutate(
     Length_of_Stay = traumar::impute(
-      Length_of_Stay,
+      x = Length_of_Stay,
+      focus = "skew",
       method = "winsorize",
-      percentile = 0.90
-    ),
-    Length_of_Stay = traumar::impute(
-      Length_of_Stay,
-      focus = "missing",
-      method = "mean"
+      percentile = 0.95
     ),
     .by = ISS_Range
-  ) |>
+  )
+
+# summarize lengths of stay ----
+median_ed_stay_transfers_iss <- trauma_data_processed |>
   dplyr::summarize(
     median_los = median(Length_of_Stay, na.rm = TRUE),
     avg_los = mean(Length_of_Stay, na.rm = TRUE),
+    n = dplyr::n(),
     .by = c(Trauma_Team_Activated, ISS_Range)
   ) |>
   dplyr::mutate(mod = log(avg_los)) |>
   dplyr::arrange(Trauma_Team_Activated, ISS_Range)
 
-# get differences ----
-avg_ed_stay_transfers_iss_diff <- avg_ed_stay_transfers_iss |>
-  dplyr::select(-c(median_los, mod)) |>
+# get raw differences ----
+median_ed_stay_transfers_iss_diff <- median_ed_stay_transfers_iss |>
+  dplyr::select(-c(avg_los, mod)) |>
   tidyr::pivot_wider(
     id_cols = ISS_Range,
     names_from = Trauma_Team_Activated,
-    values_from = avg_los
+    values_from = c(median_los, n)
   ) |>
-  dplyr::mutate(diff = abs(Activated - `Not Activated`))
+  janitor::clean_names(case = "snake") |>
+  dplyr::mutate(
+    raw_diff = abs(median_los_activated - median_los_not_activated),
+    .after = median_los_not_activated
+  )
 
-# get overall avg diff ----
-avg_diff_ed_los <- avg_ed_stay_transfers_iss_diff |>
-  dplyr::summarize(mean = round(mean(diff), digits = 1)) |>
-  dplyr::pull(mean)
+# get overall raw difference in median LOS among TTA groups ----
+median_diff_ed_los <- trauma_data_processed |>
+  dplyr::summarize(
+    median = median(Length_of_Stay),
+    .by = Trauma_Team_Activated
+  ) |>
+  dplyr::arrange(Trauma_Team_Activated) |>
+  tidyr::pivot_wider(
+    names_from = Trauma_Team_Activated,
+    values_from = median
+  ) |>
+  dplyr::mutate(raw_diff = abs(Activated - `Not Activated`)) |>
+  dplyr::pull(raw_diff)
 
+# get true difference in median LOS via Wilcox Rank Sum (Mann-Whitney U Test) ----
+# for independent samples
+true_median_ed_stay_diff <- trauma_data_processed |>
+  dplyr::group_by(ISS_Range) |>
+  tidyr::nest() |>
+  dplyr::mutate(
+    wilcox = purrr::map(
+      .x = data,
+      ~ wilcox.test(
+        Length_of_Stay ~ Trauma_Team_Activated,
+        data = .x,
+        exact = FALSE,
+        conf.int = TRUE,
+        conf.level = 0.95
+      )
+    ),
+    wilcox = purrr::map(.x = wilcox, ~ broom::tidy(x = .x))
+  ) |>
+  dplyr::select(-data) |>
+  tidyr::unnest(wilcox) |>
+  dplyr::ungroup() |>
+  dplyr::right_join(
+    median_ed_stay_transfers_iss_diff,
+    by = dplyr::join_by(ISS_Range == iss_range)
+  )
+
+# get true overall difference in median LOS
+true_median_ed_stay_diff_overall <- trauma_data_processed |>
+  wilcox.test(
+    Length_of_Stay ~ Trauma_Team_Activated,
+    data = _,
+    exact = FALSE,
+    conf.int = TRUE,
+    conf.level = 0.95
+  ) |>
+  broom::tidy()
 
 # average ED stay prior to transfer by ISS range plot ----
 avg_ed_stay_transfers_iss_plot <- avg_ed_stay_transfers_iss |>

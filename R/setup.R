@@ -15,6 +15,7 @@
 #   'usethis',
 #   'devtools',
 #   'tidyverse',
+#   'tidymodels',
 #   'tidytext',
 #   'traumar',
 #   'nemsqar',
@@ -32,36 +33,35 @@
 # ))
 
 ###_____________________________________________________________________________
-# text setup ----
+# Text setup ----
 ###_____________________________________________________________________________
 
-# get work sans fonts of interest
+# Get system fonts
 all_fonts <- systemfonts::system_fonts()
 
-# regular
-work_sans <- all_fonts |>
-  dplyr::filter(name == "WorkSans-Regular") |>
-  dplyr::pull(path)
+# Check if Work Sans is available at all
+work_sans_available <- "Work Sans" %in% all_fonts$family
 
-# semibold
-work_sans_semibold <- all_fonts |>
-  dplyr::filter(name == "WorkSans-SemiBold") |>
-  dplyr::pull(path)
+# Register Work Sans (or fallback to sans)
+if (work_sans_available) {
+  message("Registering Work Sans font family...")
+  windowsFonts(`Work Sans` = windowsFont("Work Sans"))
+} else {
+  warning("Work Sans not found on this system. Falling back to sans.")
+  windowsFonts(`Work Sans` = windowsFont("sans"))
+}
 
-# extrabold
-work_sans_extrabold <- all_fonts |>
-  dplyr::filter(name == "WorkSans-ExtraBold") |>
-  dplyr::pull(path)
+# Optionally detect SemiBold/ExtraBold and save names for use in plots
+work_sans_semibold_available <- "WorkSans-SemiBold" %in% all_fonts$name
+work_sans_black_available <- "WorkSans-Black" %in% all_fonts$name
 
-# use sysfonts to load the fonts
-sysfonts::font_add(
-  family = "Work Sans",
-  regular = work_sans,
-  bold = work_sans_extrabold
-)
-
-# Register Work Sans with Windows graphics device
-windowsFonts(`Work Sans` = windowsFonts("Work Sans"))
+# Print status
+if (work_sans_semibold_available) {
+  message("Work Sans SemiBold available.")
+}
+if (work_sans_black_available) {
+  message("Work Sans Black available.")
+}
 
 ###_____________________________________________________________________________
 # Plot / table messages ----
