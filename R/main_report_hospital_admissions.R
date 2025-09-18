@@ -6,12 +6,11 @@
 # You must first run data_load.R and setup.R before running this script
 ####
 
-# There are some records with a year of 2019, we will remove these, first.
+# There are some records with a year of 2019, we will remove these, first. ----
 ipop_data_clean <- ipop_data_clean |>
   dplyr::filter(Year > 2019)
 
-# longitudinal cases
-
+# longitudinal cases ----
 ipop_longitudinal_cases <- ipop_data_clean |>
   ipop_case_count(Year, which = "Inpatient", descriptive_stats = TRUE) |>
   dplyr::select(-prop_label) |>
@@ -39,7 +38,7 @@ ipop_longitudinal_cases <- ipop_data_clean |>
   dplyr::select(-c(`2020`, `2021`, `2022`))
 
 
-# longitudinal patients
+# longitudinal patients ----
 ipop_longitudinal_patients <- ipop_data_clean |>
   ipop_patient_count(Year, which = "Inpatient", descriptive_stats = TRUE) |>
   dplyr::select(-prop_label) |>
@@ -67,14 +66,13 @@ ipop_longitudinal_patients <- ipop_data_clean |>
   dplyr::select(-c(`2020`, `2021`, `2022`))
 
 
-# join the case and patient count data
-
+# join the case and patient count data ----
 ipop_longitudinal_case_patient <- dplyr::bind_rows(
   ipop_longitudinal_cases,
   ipop_longitudinal_patients
 )
 
-# illustrate with a gt() table
+# illustrate with a gt() table ----
 ipop_longitudinal_case_patient_tbl <- ipop_longitudinal_case_patient |>
   gt::gt() |>
   gt::fmt_percent(
@@ -114,7 +112,14 @@ ipop_longitudinal_case_patient_tbl <- ipop_longitudinal_case_patient |>
   ) |>
   tab_style_hhs(border_cols = `2023`:`2020-2024 Trend`)
 
-# age distribution of hospital admissions
+# save the gt table ----
+gt::gtsave(
+  data = ipop_longitudinal_case_patient_tbl,
+  filename = "ipop_longitudinal_case_patient_tbl.png",
+  path = plot_folder
+)
+
+# age distribution of hospital admissions ----
 ipop_age_dist <- ipop_data_clean |>
   dplyr::filter(Year == 2024) |>
   ipop_case_count(Census_Age_Group, which = "Inpatient") |>
@@ -132,7 +137,7 @@ ipop_age_dist <- ipop_data_clean |>
     )
   )
 
-# plot the age distribution within the IPOP database
+# plot the age distribution within the IPOP database ----
 ipop_age_dist_bar <- ipop_age_dist |>
   ggplot2::ggplot(ggplot2::aes(area = n, label = full_label, fill = n)) +
   treemapify::geom_treemap(
@@ -168,8 +173,7 @@ ggplot2::ggsave(
   path = plot_folder
 )
 
-
-# IPOP nature of injury frequency
+# IPOP nature of injury frequency ----
 ipop_nature_injury_freq <- ipop_data_clean |>
   dplyr::filter(Year == 2024) |>
   dplyr::mutate(
@@ -191,7 +195,7 @@ ipop_nature_injury_freq <- ipop_data_clean |>
     angle_mod = cos(angle)
   )
 
-# plot nature of injury frequency via area chart
+# plot nature of injury frequency via area chart ----
 # if this plot saves dark, you can load in Paint, edit size down, and it will turn to white background
 ipop_nature_injury_freq_plot <- ipop_nature_injury_freq |>
   ggplot2::ggplot(ggplot2::aes(
@@ -282,7 +286,7 @@ ipop_nature_injury_freq_plot <- ipop_nature_injury_freq |>
     )
   )
 
-# save the nature of injury frequency plot for the IPOP data
+# save the nature of injury frequency plot for the IPOP data ----
 ggplot2::ggsave(
   filename = "ipop_nature_injury_freq_plot.png",
   plot = ipop_nature_injury_freq_plot,
@@ -291,7 +295,7 @@ ggplot2::ggsave(
   width = 9 * (16 / 9)
 )
 
-# IPOP body region injury frequency table
+# IPOP body region injury frequency table ----
 ipop_body_region <- ipop_data_clean |>
   dplyr::filter(Year == 2024) |>
   tidyr::replace_na(list(
@@ -330,8 +334,7 @@ ipop_body_region <- ipop_data_clean |>
     angle_mod = cos(angle)
   )
 
-# make the circular bar plot
-
+# make the circular bar plot ----
 ipop_body_region_plot <- ipop_body_region |>
   ggplot2::ggplot(ggplot2::aes(
     x = reorder(BODY_REGION_CATEGORY_LEVEL_1, -mod),
@@ -379,8 +382,7 @@ ipop_body_region_plot <- ipop_body_region |>
     )
   )
 
-# save the body region injury frequency plot
-
+# save the body region injury frequency plot ----
 ggplot2::ggsave(
   filename = "ipop_body_region_plot.png",
   plot = ipop_body_region_plot,
