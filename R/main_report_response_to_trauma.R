@@ -950,28 +950,131 @@ gt::gtsave(
   path = plot_folder
 )
 
-# plot the change in the median ED LOS prior to transfer over time
+# create intermediate objects for the plot ----
+raw_median_times <- trauma_data_processed |>
+  traumar::is_it_normal(Length_of_Stay, group_vars = "Year") |>
+  purrr::pluck(1)
+
+raw_median_times_pivot <- median_diff_ed_los |>
+  tidyr::pivot_longer(
+    cols = c(Activated, `Not Activated`),
+    names_to = "var",
+    values_to = "val"
+  )
+
+# plot the change in the median ED LOS prior to transfer over time ----
 # as a combination plot
 longitudinal_median_ed_los_plot <-
   ggplot2::ggplot() +
   ggplot2::geom_col(
-    data = trauma_data_processed |>
-      traumar::is_it_normal(Length_of_Stay, group_vars = "Year") |>
-      purrr::pluck(1),
+    data = raw_median_times,
     ggplot2::aes(x = Year, y = median),
     width = 0.5,
-    alpha = 0.25,
-    fill = "lightblue"
+    alpha = 0.35,
+    fill = "#B9E1DA"
+  ) +
+  ggplot2::geom_text(
+    data = raw_median_times,
+    ggplot2::aes(x = Year, y = 10, label = median),
+    color = "black",
+    size = 12,
+    family = "Work Sans",
+    fontface = "bold"
   ) +
   ggplot2::geom_line(
-    data = median_diff_ed_los |>
-      tidyr::pivot_longer(
-        cols = c(Activated, `Not Activated`),
-        names_to = "var",
-        values_to = "val"
-      ),
+    data = raw_median_times_pivot,
     ggplot2::aes(x = Year, y = val, color = var),
     linewidth = 1.75
   ) +
-  ggplot2::guides(fill = "none", color = ggplot2::guide_legend(title = "")) +
-  traumar::theme_cleaner(base_size = 30)
+  ggrepel::geom_text_repel(
+    data = raw_median_times_pivot,
+    ggplot2::aes(
+      x = Year,
+      y = ifelse(Year %in% c(2020, 2024), val, NA),
+      label = val
+    ),
+    color = "black",
+    fontface = "bold",
+    family = "Work Sans",
+    size = 12,
+    direction = "y",
+    nudge_y = 5,
+    seed = 10232015
+  ) +
+  ggplot2::guides(
+    fill = "none",
+    color = ggplot2::guide_legend(title = "")
+  ) +
+  ggplot2::labs(x = "", y = "") +
+  ggplot2::scale_color_manual(values = c("#4D4D4F", "#FDD304")) +
+  traumar::theme_cleaner(base_size = 30, axis.text.y = ggplot2::element_blank())
+
+# save the longitudinal analysis of medians plot ----
+ggplot2::ggsave(
+  filename = "longitudinal_median_ed_los_plot.png",
+  plot = longitudinal_median_ed_los_plot,
+  height = 7,
+  width = 7 * 1.78,
+  path = plot_folder
+)
+
+# trauma team activations ----
+tta_counts <- trauma_data_clean |>
+  injury_case_count(Year, Trauma_Team_Activated) |>
+  dplyr::arrange(Trauma_Team_Activated) |>
+  dplyr::mutate(
+    change = n - dplyr::lag(n),
+    pct_change = change / dplyr::lag(n),
+    .by = Trauma_Team_Activated
+  ) |>
+  dplyr::mutate(
+    pct_total = n / sum(n),
+    .by = Year,
+    .after = n
+  ) |>
+  tidyr::pivot_wider(
+    id_cols = Year,
+    names_from = Trauma_Team_Activated,
+    values_from = n:pct_change
+  )
+
+# TTAs among verification levels ----
+tta_levels_counts <- trauma_data_clean |>
+  dplyr::mutate(
+    Trauma_Team_Activation_Level = dplyr::case_when(
+      is.na(Trauma_Team_Activation_Level) |
+        grepl(
+          pattern = "not\\s|non-|consultation|level 3",
+          x = Trauma_Team_Activation_Level,
+          ignore.case = TRUE
+        ) ~
+        "Not Activated",
+      TRUE ~ Trauma_Team_Activation_Level
+    )
+  ) |>
+  injury_case_count(Year, Trauma_Team_Activation_Level) |>
+  tidyr::pivot_wider(
+    id_cols = Year,
+    names_from = Trauma_Team_Activation_Level,
+    values_from = n
+  )
+
+# acute transfers ----
+acute_transfer_counts <- trauma_data_clean |>
+  dplyr::mutate(
+    Acute_Transfer_Out = ifelse(
+      is.na(Acute_Transfer_Out),
+      "No",
+      Acute_Transfer_Out
+    )
+  ) |>
+  injury_case_count(Year, Acute_Transfer_Out) |>
+  tidyr::pivot_wider(
+    id_cols = Year,
+    names_from = Acute_Transfer_Out,
+    values_from = n
+  ) |>
+  dplyr::mutate(
+    total = No + Yes,
+    pct_acute_transfer = Yes / total
+  )
