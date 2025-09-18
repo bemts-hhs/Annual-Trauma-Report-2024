@@ -749,8 +749,12 @@ ggplot2::ggsave(
 
 # median ED stay prior to transfer by ISS range df ----
 # prep data ----
-prep_trauma_data <- trauma_2024 |>
-  dplyr::filter(Acute_Transfer_Out == "Yes") |>
+prep_trauma_data <- trauma_data_clean |>
+  dplyr::filter(
+    Acute_Transfer_Out == "Yes",
+    !is.na(Trauma_Team_Activated),
+    !is.na(ISS_Range)
+  ) |>
   dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE)
 
 # use tidymodels to create a recipe to handle missing values and outliers
@@ -773,62 +777,68 @@ trauma_recipe <- recipes::recipe(~., data = prep_trauma_data) |>
   recipes::step_impute_knn(Length_of_Stay, neighbors = 5) # KNN imputation
 
 # prep and bake the recipe ----
-trauma_data_processed <- trauma_recipe |>
-  recipes::prep() |>
-  recipes::bake(new_data = NULL) |>
-  dplyr::mutate(
-    Length_of_Stay = traumar::impute(
-      x = Length_of_Stay,
-      focus = "skew",
-      method = "winsorize",
-      percentile = 0.95
-    ),
-    .by = ISS_Range
-  )
+trauma_data_processed <- withr::with_seed(
+  10232015, # ensures reproducible KNN imputation
+  trauma_recipe |>
+    recipes::prep() |>
+    recipes::bake(new_data = NULL) |>
+    dplyr::mutate(
+      # winsorize LOS within Year/ISS_Range groups AFTER imputation
+      Length_of_Stay = traumar::impute(
+        x = Length_of_Stay,
+        focus = "skew",
+        method = "winsorize",
+        percentile = 0.95
+      ),
+      .by = c(Year, Trauma_Team_Activated, ISS_Range)
+    )
+)
 
 # summarize lengths of stay ----
 median_ed_stay_transfers_iss <- trauma_data_processed |>
-  dplyr::summarize(
-    median_los = median(Length_of_Stay, na.rm = TRUE),
-    avg_los = mean(Length_of_Stay, na.rm = TRUE),
-    n = dplyr::n(),
-    .by = c(Trauma_Team_Activated, ISS_Range)
+  traumar::is_it_normal(
+    Length_of_Stay,
+    group_vars = c("Year", "Trauma_Team_Activated", "ISS_Range"),
+    normality_test = NULL,
+    include_plots = FALSE
   ) |>
-  dplyr::mutate(mod = log(avg_los)) |>
-  dplyr::arrange(Trauma_Team_Activated, ISS_Range)
+  purrr::pluck(1) # get the descriptive statistics
 
 # get raw differences ----
 median_ed_stay_transfers_iss_diff <- median_ed_stay_transfers_iss |>
-  dplyr::select(-c(avg_los, mod)) |>
+  dplyr::select(Year, Trauma_Team_Activated, ISS_Range, median, n_obs) |>
   tidyr::pivot_wider(
-    id_cols = ISS_Range,
+    id_cols = c(Year, ISS_Range),
     names_from = Trauma_Team_Activated,
-    values_from = c(median_los, n)
+    values_from = c(median, n_obs)
   ) |>
   janitor::clean_names(case = "snake") |>
   dplyr::mutate(
-    raw_diff = abs(median_los_activated - median_los_not_activated),
-    .after = median_los_not_activated
+    raw_diff = abs(median_activated - median_not_activated),
+    .after = median_not_activated
   )
 
 # get overall raw difference in median LOS among TTA groups ----
 median_diff_ed_los <- trauma_data_processed |>
-  dplyr::summarize(
-    median = median(Length_of_Stay),
-    .by = Trauma_Team_Activated
+  traumar::is_it_normal(
+    Length_of_Stay,
+    group_vars = c("Year", "Trauma_Team_Activated"),
+    normality_test = NULL,
+    include_plots = FALSE
   ) |>
+  purrr::pluck(1) |>
+  dplyr::select(Year, Trauma_Team_Activated, median) |>
   dplyr::arrange(Trauma_Team_Activated) |>
   tidyr::pivot_wider(
     names_from = Trauma_Team_Activated,
     values_from = median
   ) |>
-  dplyr::mutate(raw_diff = abs(Activated - `Not Activated`)) |>
-  dplyr::pull(raw_diff)
+  dplyr::mutate(raw_diff = abs(Activated - `Not Activated`))
 
 # get true difference in median LOS via Wilcox Rank Sum (Mann-Whitney U Test) ----
 # for independent samples
 true_median_ed_stay_diff <- trauma_data_processed |>
-  dplyr::group_by(ISS_Range) |>
+  dplyr::group_by(Year, ISS_Range) |>
   tidyr::nest() |>
   dplyr::mutate(
     wilcox = purrr::map(
@@ -848,335 +858,120 @@ true_median_ed_stay_diff <- trauma_data_processed |>
   dplyr::ungroup() |>
   dplyr::right_join(
     median_ed_stay_transfers_iss_diff,
-    by = dplyr::join_by(ISS_Range == iss_range)
-  )
+    by = dplyr::join_by(Year == year, ISS_Range == iss_range)
+  ) |>
+  dplyr::relocate(Year, .before = 1) |>
+  dplyr::arrange(Year, ISS_Range)
 
 # get true overall difference in median LOS
 true_median_ed_stay_diff_overall <- trauma_data_processed |>
-  wilcox.test(
-    Length_of_Stay ~ Trauma_Team_Activated,
-    data = _,
-    exact = FALSE,
-    conf.int = TRUE,
-    conf.level = 0.95
-  ) |>
-  broom::tidy()
-
-# average ED stay prior to transfer by ISS range plot ----
-avg_ed_stay_transfers_iss_plot <- avg_ed_stay_transfers_iss |>
-  ggplot2::ggplot(ggplot2::aes(
-    x = fct_relevel(ISS_Range, rev(levels(ISS_Range))),
-    y = avg_los,
-    fill = ISS_Range,
-    label = traumar::pretty_number(avg_los, n_decimal = 1)
-  )) +
-  ggplot2::geom_col(width = 0.5, color = "black") +
-  ggplot2::geom_text(
-    nudge_y = avg_ed_stay_transfers_iss$avg_los /
-      (avg_ed_stay_transfers_iss$mod * 2.5),
-    family = "Work Sans",
-    size = 8,
-    color = "black"
-  ) +
-  ggplot2::facet_grid(rows = vars(Trauma_Team_Activated), switch = "y") +
-  ggplot2::coord_flip() +
-  ggplot2::labs(
-    title = "Average ED Length of Stay in Minutes Prior to Transfer by ISS Range",
-    subtitle = "Source: Iowa ImageTrend Patient Registry | 2024",
-    caption = "- ED LOS calculated from datetime of patient arrival to datetime of physical discharge.\n- These data reflect cases, which include transfers.  Cases are defined as each distinct episode when a patient enters an ED\n   or hospital for treatment of an injury.\n- Imputation methods: Winsorization at 10th / 90th percentiles, then mean imputation on missing values.",
-    x = "",
-    y = "Case Count\n",
-    fill = "ISS Range"
-  ) +
-  ggplot2::scale_fill_paletteer_d(
-    palette = "colorBlindness::PairedColor12Steps"
-  ) +
-  traumar::theme_cleaner(
-    base_size = 15,
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1,
-    facet_text_size = 18,
-    strip.placement = "outside",
-    legend_position = "inside",
-    legend.position.inside = c(0.9, 0.75),
-    legend.direction = "vertical",
-    legend.key.spacing.y = unit(1, "cm"),
-    draw_panel_border = TRUE,
-    facets = TRUE
-  )
-
-# save the avg Ed stay prior to transfer by iss range plot ----
-ggplot2::ggsave(
-  filename = "avg_ed_stay_transfers_iss_plot.png",
-  plot = avg_ed_stay_transfers_iss_plot,
-  path = plot_folder
-)
-
-# average ED stay in minutes prior to transfer by ISS range and trauma level df ----
-avg_ED_LOS_transfer_iss_level <- trauma_2024 |>
-  dplyr::filter(Transfer_Out == "Yes") |>
-  dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
-  dplyr::mutate(
-    ISS_Range = factor(
-      ISS_Range,
-      levels = c("1 - 8", "9 - 15", "16+"),
-      labels = c("1-8", "9-15", "16+")
-    ),
-    Length_of_Stay = traumar::impute(
-      Length_of_Stay,
-      method = "winsorize",
-      percentile = 0.90
-    ),
-    Length_of_Stay = traumar::impute(
-      Length_of_Stay,
-      focus = "missing",
-      method = "mean"
-    ),
-    .by = c(ISS_Range, Level)
-  ) |>
-  dplyr::summarize(
-    avg_los = mean(Length_of_Stay),
-    median_los = median(Length_of_Stay),
-    min_los = min(Length_of_Stay),
-    max_los = max(Length_of_Stay),
-    N = dplyr::n(),
-    N_label = dplyr::if_else(N < 6, "*", prettyNum(N, big.mark = ",")),
-    mod = log(avg_los),
-    .by = c(Trauma_Team_Activated, ISS_Range, Level)
-  ) |>
-  dplyr::arrange(Trauma_Team_Activated, ISS_Range, Level)
-
-
-# average ED stay in minutes prior to transfer by ISS range and trauma level plot ----
-avg_ED_LOS_transfer_iss_level_plot <- avg_ED_LOS_transfer_iss_level |>
-  ggplot2::ggplot(ggplot2::aes(
-    x = ISS_Range,
-    y = avg_los,
-    fill = ISS_Range
-  )) +
-  ggplot2::geom_col(color = "black") +
-  ggrepel::geom_text_repel(
-    ggplot2::aes(label = round(avg_los, digits = 1)),
-    nudge_y = dplyr::if_else(
-      avg_ED_LOS_transfer_iss_level$avg_los > 500,
-      -1,
-      1
-    ),
-    direction = "y",
-    segment.color = NA,
-    size = 8,
-    color = dplyr::if_else(
-      avg_ED_LOS_transfer_iss_level$avg_los > 500,
-      "white",
-      "black"
-    ),
-    family = "Work Sans"
-  ) +
-  ggplot2::geom_text(
-    ggplot2::aes(y = 65, label = paste0("n = ", N_label)),
-    size = 8,
-    color = "white",
-    family = "Work Sans"
-  ) +
-  ggplot2::facet_grid(
-    rows = vars(Level),
-    cols = vars(Trauma_Team_Activated),
-    switch = "y"
-  ) +
-  ggplot2::labs(
-    title = "Average ED Length of Stay in Minutes Prior to Transfer by ISS Range and Trauma Level",
-    subtitle = "Source: Iowa ImageTrend patient Registry | 2024",
-    caption = "- Top value = average ED LOS, bottom value = # cases\n- ED LOS calculated from datetime of patient arrival to datetime of physical discharge.\n- Imputation methods: Winsorization at 10th / 90th percentiles, then mean imputation on missing values.\n- These data reflect cases, which include transfers.  Cases are defined as each distinct episode when a patient enters an ED or\n   hospital for treatment of an injury.",
-    x = "",
-    y = "",
-    fill = "ISS Range"
-  ) +
-  ggplot2::scale_fill_paletteer_d(
-    palette = "colorBlindness::ModifiedSpectralScheme11Steps",
-    direction = 1
-  ) +
-  traumar::theme_cleaner(
-    base_size = 15,
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1,
-    facet_text_size = 18,
-    strip.placement = "outside",
-    axis.text.y = element_blank(),
-    draw_panel_border = TRUE,
-    facets = TRUE
-  )
-
-# save the average ED stay in minutes prior to transfer by ISS range and trauma level plot ----
-ggplot2::ggsave(
-  filename = "avg_ED_LOS_transfer_iss_level_plot.png",
-  plot = avg_ED_LOS_transfer_iss_level_plot,
-  path = plot_folder
-)
-
-
-# longitudinal average ED stay prior to transfer ----
-
-# years and activation status ----
-longitudinal_avg_ed_los <- trauma_data_clean |>
-  dplyr::filter(Transfer_Out == "Yes", Year %in% 2019:2024) |>
   dplyr::group_by(Year) |>
-  dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
-  dplyr::ungroup() |>
+  tidyr::nest() |>
   dplyr::mutate(
-    Length_of_Stay = traumar::impute(
-      Length_of_Stay,
-      method = "winsorize",
-      percentile = 0.90
+    wilcox = purrr::map(
+      .x = data,
+      ~ wilcox.test(
+        Length_of_Stay ~ Trauma_Team_Activated,
+        data = .x,
+        exact = FALSE,
+        conf.int = TRUE,
+        conf.level = 0.95
+      )
     ),
-    Length_of_Stay = traumar::impute(
-      Length_of_Stay,
-      focus = "missing",
-      method = "mean"
-    ),
-    .by = c(Year, Trauma_Team_Activated)
+    wilcox = purrr::map(.x = wilcox, ~ broom::tidy(x = .x))
   ) |>
-  dplyr::summarize(
-    avg_los = round(mean(Length_of_Stay), digits = 1),
-    .by = c(Year, Trauma_Team_Activated)
+  dplyr::select(-data) |>
+  tidyr::unnest(wilcox) |>
+  dplyr::ungroup()
+
+# gt table to show median ED LOS difference based on TTA ----
+true_median_ed_stay_diff_gt <- true_median_ed_stay_diff |>
+  dplyr::mutate(
+    n_obs = n_obs_activated + n_obs_not_activated,
+    .after = conf.high
   ) |>
-  dplyr::arrange(Year, Trauma_Team_Activated) |>
+  dplyr::select(-c(statistic:p.value, method:tidyselect::last_col())) |>
+  dplyr::filter(Year >= 2022) |>
   tidyr::pivot_wider(
-    id_cols = Year,
-    names_from = Trauma_Team_Activated,
-    values_from = avg_los
+    id_cols = ISS_Range,
+    names_from = Year,
+    values_from = c(estimate, conf.low, conf.high, n_obs)
   ) |>
-  purrr::set_names(nm = c("Year", "Activated", "Not Activated")) |>
-  dplyr::mutate(
-    label_1 = dplyr::if_else(
-      Year == min(Year) | Year == max(Year),
-      Activated,
-      NA_real_
+  gt::gt() |>
+  gt::fmt_number(
+    columns = tidyselect::matches("estimate|conf|n_obs"),
+    drop_trailing_zeros = TRUE
+  ) |>
+  gt::cols_merge(
+    columns = c(
+      estimate_2022,
+      conf.low_2022,
+      conf.high_2022,
+      n_obs_2022
     ),
-    label_2 = dplyr::if_else(
-      Year == min(Year) | Year == max(Year),
-      `Not Activated`,
-      NA_real_
-    )
+    pattern = "{1} (CI: {2}, {3}) n={4}"
+  ) |>
+  gt::cols_merge(
+    columns = c(
+      estimate_2023,
+      conf.low_2023,
+      conf.high_2023,
+      n_obs_2023
+    ),
+    pattern = "{1} (CI: {2}, {3}) n={4}"
+  ) |>
+  gt::cols_merge(
+    columns = c(
+      estimate_2024,
+      conf.low_2024,
+      conf.high_2024,
+      n_obs_2024
+    ),
+    pattern = "{1} (CI: {2}, {3}) n={4}"
+  ) |>
+  gt::cols_label_with(
+    columns = tidyselect::matches("estimate"),
+    ~ stringr::str_remove(string = ., pattern = "estimate_")
+  ) |>
+  gt::cols_label(
+    ISS_Range ~ "ISS Range"
+  ) |>
+  tab_style_hhs(
+    border_cols = 2:4,
+    column_labels = 18,
+    body = 16,
+    source_note = 16
   )
 
-
-# year with no activation status strata ----
-longitudinal_avg_ed_los_year <- trauma_data_clean |>
-  dplyr::filter(Transfer_Out == "Yes", Year %in% 2019:2024) |>
-  dplyr::group_by(Year) |>
-  dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
-  dplyr::ungroup() |>
-  dplyr::mutate(
-    Length_of_Stay = traumar::impute(
-      Length_of_Stay,
-      method = "winsorize",
-      percentile = 0.90
-    ),
-    Length_of_Stay = traumar::impute(
-      Length_of_Stay,
-      focus = "missing",
-      method = "mean"
-    ),
-    .by = Year
-  ) |>
-  dplyr::summarize(
-    avg_los = round(mean(Length_of_Stay), digits = 1),
-    median_los = median(Length_of_Stay),
-    min_los = min(Length_of_Stay),
-    max_los = max(Length_of_Stay),
-    N = dplyr::n(),
-    N_label = dplyr::if_else(N < 6, "*", prettyNum(N, big.mark = ",")),
-    mod = log(avg_los),
-    .by = Year
-  ) |>
-  dplyr::arrange(Year)
-
-
-# longitudinal average ED stay prior to transfer plot ----
-longitudinal_avg_ed_los_plot <- longitudinal_avg_ed_los_year |>
-  ggplot2::ggplot(ggplot2::aes(factor(Year), avg_los, fill = factor(Year))) +
-  ggplot2::geom_col(alpha = 0.1) +
-  ggplot2::geom_text(
-    ggplot2::aes(y = 20, label = paste0(avg_los, "\n", "n = ", N_label)),
-    family = "Work Sans",
-    size = 8,
-    color = "black"
-  ) +
-  ggplot2::geom_line(
-    data = longitudinal_avg_ed_los,
-    ggplot2::aes(
-      x = factor(Year),
-      y = Activated,
-      color = "dodgerblue",
-      group = 1
-    ),
-    linewidth = 2.25,
-    lineend = "round",
-    linejoin = "round"
-  ) +
-  ggrepel::geom_text_repel(
-    data = longitudinal_avg_ed_los,
-    ggplot2::aes(x = factor(Year), y = Activated, label = label_1),
-    family = "Work Sans",
-    size = 8,
-    color = "black",
-    direction = "y",
-    nudge_y = 1,
-    max.iter = 30000,
-    segment.color = NA
-  ) +
-  ggplot2::geom_line(
-    data = longitudinal_avg_ed_los,
-    ggplot2::aes(
-      x = factor(Year),
-      y = `Not Activated`,
-      color = "orangered",
-      group = 2
-    ),
-    linewidth = 2.25,
-    lineend = "round",
-    linejoin = "round"
-  ) +
-  ggrepel::geom_text_repel(
-    data = longitudinal_avg_ed_los,
-    ggplot2::aes(x = factor(Year), y = `Not Activated`, label = label_2),
-    family = "Work Sans",
-    size = 8,
-    color = "black",
-    direction = "y",
-    nudge_y = 4,
-    max.iter = 30000,
-    segment.color = NA
-  ) +
-  ggplot2::guides(fill = "none") +
-  ggplot2::labs(
-    title = "Longitudinal Average ED Length of Stay Prior to Transfer",
-    subtitle = "Source: Iowa ImageTrend Patient Registry | 2019-2024",
-    caption = "- Top value = average ED LOS, bottom value = # cases\n- ED LOS calculated from datetime of patient arrival to datetime of physical discharge.\n- Imputation methods: Winsorization at 10th / 90th percentiles, then mean imputation on missing values.\n- These data reflect cases.  Cases are defined as each distinct episode when a patient enters an ED or\n   hospital for treatment of an injury.",
-    x = "",
-    y = ""
-  ) +
-  ggplot2::scale_fill_viridis_d(option = "cividis", direction = -1) +
-  ggplot2::scale_color_manual(
-    name = "Activation Status",
-    values = c("dodgerblue", "orangered"),
-    labels = c("Activated", "Not Activated")
-  ) +
-  traumar::theme_cleaner(
-    base_size = 15,
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1
-  )
-
-# save the longitudinal ED LOS plot ----
-ggplot2::ggsave(
-  filename = "longitudinal_avg_ed_los_plot.png",
-  plot = longitudinal_avg_ed_los_plot,
+# save the gt table for median differences in ED LOS over the years ----
+gt::gtsave(
+  filename = "true_median_ed_stay_diff_gt.png",
+  data = true_median_ed_stay_diff_gt,
   path = plot_folder
 )
+
+# plot the change in the median ED LOS prior to transfer over time
+# as a combination plot
+longitudinal_median_ed_los_plot <-
+  ggplot2::ggplot() +
+  ggplot2::geom_col(
+    data = trauma_data_processed |>
+      traumar::is_it_normal(Length_of_Stay, group_vars = "Year") |>
+      purrr::pluck(1),
+    ggplot2::aes(x = Year, y = median),
+    width = 0.5,
+    alpha = 0.25,
+    fill = "lightblue"
+  ) +
+  ggplot2::geom_line(
+    data = median_diff_ed_los |>
+      tidyr::pivot_longer(
+        cols = c(Activated, `Not Activated`),
+        names_to = "var",
+        values_to = "val"
+      ),
+    ggplot2::aes(x = Year, y = val, color = var),
+    linewidth = 1.75
+  ) +
+  ggplot2::guides(fill = "none", color = ggplot2::guide_legend(title = "")) +
+  traumar::theme_cleaner(base_size = 30)
