@@ -54,7 +54,7 @@ gender_proportions_plot <- gender_proportions |>
         color = "white",
         angle = 90,
         position = ggplot2::position_dodge(width = 0.7),
-        size = 9,
+        size = 12,
         fontface = "bold",
         family = "Work Sans"
     ) +
@@ -62,9 +62,9 @@ gender_proportions_plot <- gender_proportions |>
     ggplot2::scale_y_continuous(n.breaks = 5, labels = function(x) {
         traumar::pretty_number(x = x)
     }) +
-    ggplot2::labs(x = "", y = "Patients") +
+    ggplot2::labs(x = "", y = "") +
     traumar::theme_cleaner(
-        base_size = 25,
+        base_size = 30,
         axis.text.y = ggplot2::element_blank()
     )
 

@@ -12,16 +12,16 @@
 
 # patients
 
-# get the current year's patient count
+# get the current year's patient count ----
 patient_count <- trauma_2024 |>
   injury_patient_count() |>
   dplyr::pull(n)
 
-# get the trend
+# get the trend ----
 patient_count_years <- trauma_data_clean |>
   injury_patient_count(Year, descriptive_stats = TRUE)
 
-# a gt table
+# a gt table ----
 patients_gt <- patient_count_years |>
   gt::gt() |>
   gt::cols_hide(prop_change) |>
@@ -32,16 +32,21 @@ patients_gt <- patient_count_years |>
   ) |>
   gt::sub_missing() |>
   gt::fmt_number(columns = 2:3, drop_trailing_zeros = TRUE) |>
-  tab_style_hhs(message_text = NULL, border_cols = 2:last_col())
+  tab_style_hhs(
+    message_text = NULL,
+    border_cols = 2:last_col(),
+    column_labels = 18,
+    body = 16
+  )
 
-# save the table
+# save the table ----
 gt::gtsave(
   patients_gt,
   filename = "patients_gt.png",
   path = plot_folder
 )
 
-# a line plot
+# a line plot ----
 patient_count_plot <- patient_count_years |>
   ggplot2::ggplot(ggplot2::aes(
     x = Year,
@@ -78,7 +83,7 @@ patient_count_plot <- patient_count_years |>
     traumar::pretty_number(x, n_decimal = 2)
   })
 
-# save the bar plot
+# save the bar plot ----
 ggplot2::ggsave(
   filename = "patient_count_plot.png",
   plot = patient_count_plot,
@@ -87,19 +92,18 @@ ggplot2::ggsave(
   width = 6 * (16 / 9)
 )
 
+# injuries ----
 
-# injuries
-
-# get the current year's count of events
+# get the current year's count of events ----
 incident_count <- trauma_2024 |>
   injury_incident_count() |>
   dplyr::pull(n)
 
-# get the trend
+# get the trend ----
 incident_count_years <- trauma_data_clean |>
   injury_incident_count(Year, descriptive_stats = TRUE)
 
-# a line graph
+# a line graph ----
 incident_count_plot <- incident_count_years |>
   ggplot2::ggplot(ggplot2::aes(
     x = Year,
@@ -117,26 +121,25 @@ incident_count_plot <- incident_count_years |>
     linejoin = "round"
   ) +
   ggrepel::geom_text_repel(
-    nudge_y = -250,
+    nudge_y = ifelse(incident_count_years$Year == 2020, -300, 400),
     segment.color = "transparent",
     seed = 8182023,
     direction = "both",
     color = "darkblue",
-    size = 10,
+    size = 15,
     fontface = "bold",
     family = "Work Sans"
   ) +
-  traumar::theme_cleaner(base_family = "Work Sans") +
+  traumar::theme_cleaner(base_family = "Work Sans", base_size = 30) +
   ggplot2::theme(
     axis.title = ggplot2::element_blank(),
-    axis.text.y = ggplot2::element_blank(),
-    axis.text.x = ggplot2::element_text(size = 30)
+    axis.text.y = ggplot2::element_blank()
   ) +
   ggplot2::scale_y_continuous(labels = function(x) {
     traumar::pretty_number(x, n_decimal = 2)
   })
 
-# save the incident plot
+# save the incident plot ----
 ggplot2::ggsave(
   filename = "incident_count_plot.png",
   plot = incident_count_plot,
@@ -145,7 +148,7 @@ ggplot2::ggsave(
   width = 6 * (16 / 9)
 )
 
-# generate the incident table
+# generate the incident table ----
 incidents_gt <- incident_count_years |>
   gt::gt() |>
   gt::cols_hide(columns = c(prop_change, Min_Reinjury:Q75_Reinjury)) |>
@@ -165,8 +168,7 @@ gt::gtsave(
 )
 
 
-# cases
-
+# cases ----
 case_count <- trauma_2024 |>
   injury_case_count() |>
   dplyr::pull(n)
@@ -197,18 +199,18 @@ gt::gtsave(
 # Transfers and transfer delay ----
 ###_____________________________________________________________________________
 
-# Compute transfer delay summaries for 2023–2024 using imputed Length_of_Stay
+# Compute transfer delay summaries for 2023–2024 using imputed Length_of_Stay ----
 transfer_delays_2024 <- trauma_data_clean |>
 
-  # Filter to only cases from 2023–2024 that were acute interfacility transfers
+  # Filter to only cases from 2023–2024 that were acute interfacility transfers ----
   dplyr::filter(Year %in% 2023:2024, Acute_Transfer_Out == "Yes") |>
 
-  # Retain only one row per incident to avoid double-counting transfers
+  # Retain only one row per incident to avoid double-counting transfers ----
   dplyr::group_by(Year) |>
   dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
   dplyr::ungroup() |>
 
-  # Apply two-stage imputation for Length_of_Stay
+  # Apply two-stage imputation for Length_of_Stay ----
   dplyr::mutate(
     # Step 1: Handle extreme outliers using IQR-based capping within each year
     Length_of_Stay_trt = traumar::impute(
@@ -227,7 +229,7 @@ transfer_delays_2024 <- trauma_data_clean |>
     .by = Year # Apply both steps separately for each year
   ) |>
 
-  # Summarize delay and timeliness indicators for each year
+  # Summarize delay and timeliness indicators for each year ----
   dplyr::summarize(
     Delayed_2hr = sum(Length_of_Stay_imp > 120, na.rm = TRUE), # Delays over 2 hours
     Delayed_3hr = sum(Length_of_Stay_imp > 180, na.rm = TRUE), # Delays over 3 hours
@@ -241,7 +243,7 @@ transfer_delays_2024 <- trauma_data_clean |>
     .by = Year # Summary statistics by year
   ) |>
 
-  # Join with total injury case counts to contextualize transfer volume
+  # Join with total injury case counts to contextualize transfer volume ----
   dplyr::left_join(
     trauma_data_clean |>
       dplyr::filter(Year %in% 2023:2024) |>
@@ -254,8 +256,7 @@ transfer_delays_2024 <- trauma_data_clean |>
 # Gender ----
 ###_____________________________________________________________________________
 
-# get gender data
-
+# get gender data ----
 gender_group <- trauma_data_clean |>
   dplyr::filter(Year %in% 2023:2024) |>
   injury_incident_count(Year, Patient_Gender) |>
@@ -269,8 +270,7 @@ gender_group <- trauma_data_clean |>
     )
   )
 
-# create a table visualization using gt()
-
+# create a table visualization using gt() ----
 gender_group_tbl <-
   gender_group |>
   dplyr::mutate(
@@ -307,7 +307,7 @@ gender_group_tbl <-
   ) |>
   tab_style_hhs(border_cols = n:Proportion, message_text = NULL)
 
-# save the table viz
+# save the table viz ----
 gt::gtsave(
   data = gender_group_tbl,
   filename = "gender_group_tbl.png",
@@ -319,8 +319,7 @@ gt::gtsave(
 # Age ----
 ###_____________________________________________________________________________
 
-# source df
-
+# source df ----
 age_group <- trauma_data_clean |>
   dplyr::mutate(
     Age_Range = tidyr::replace_na(Age_Range, "Missing"),
@@ -365,11 +364,11 @@ age_group <- trauma_data_clean |>
   )
 
 
-# df for printing
+# df for printing ----
 age_group_filtered <- age_group |>
   dplyr::filter(Year %in% 2023:2024)
 
-# df for the plot
+# df for the plot ----
 age_group_plot_df <- age_group |>
   dplyr::filter(Year %in% 2021:2024, Age_Range != "Missing") |>
   dplyr::mutate(
@@ -380,8 +379,7 @@ age_group_plot_df <- age_group |>
     )
   )
 
-# produce the plot
-
+# produce the plot ----
 age_group_plot <- age_group_plot_df |>
   ggplot2::ggplot(ggplot2::aes(
     factor(Year),
@@ -426,8 +424,7 @@ ggplot2::ggsave(
 )
 
 
-# age group plot line giving counts
-
+# age group plot line giving counts ----
 age_group_lines <- age_group_plot_df |>
   ggplot2::ggplot(ggplot2::aes(
     factor(Year),
@@ -473,8 +470,7 @@ ggplot2::ggsave(
 # Race ----
 ###_____________________________________________________________________________
 
-# source df
-
+# source df ----
 race_group <- trauma_data_clean |>
   dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
   dplyr::mutate(
@@ -519,7 +515,7 @@ race_group <- trauma_data_clean |>
   tidyr::replace_na(list(change = 0, change_label = "0%"))
 
 
-# df for plotting
+# df for plotting ----
 race_group_plot_df <- race_group |>
   dplyr::filter(Year %in% 2021:2024) |>
   dplyr::mutate(
@@ -527,12 +523,11 @@ race_group_plot_df <- race_group |>
     .by = Year
   )
 
-# df for printing
+# df for printing ----
 race_group_filtered <- race_group |>
   dplyr::filter(Year %in% 2023:2024)
 
-# build the race group column plot
-
+# build the race group column plot ----
 race_group_plot <- race_group_plot_df |>
   dplyr::filter(Patient_Race != "Not Known/Not Recorded") |>
   dplyr::mutate(
@@ -572,7 +567,7 @@ race_group_plot <- race_group_plot_df |>
     facets = TRUE
   )
 
-# save the race group column plot
+# save the race group column plot ----
 ggplot2::ggsave(
   filename = "race_group_plot.png",
   plot = race_group_plot,
@@ -582,8 +577,7 @@ ggplot2::ggsave(
 )
 
 
-# race group line graph
-
+# race group line graph ----
 race_group_line_plot <- race_group_plot_df |>
   dplyr::filter(Patient_Race != "More than One Category") |>
   ggplot2::ggplot(ggplot2::aes(
@@ -639,8 +633,7 @@ race_group_line_plot <- race_group_plot_df |>
     facets = TRUE
   )
 
-# save the race group line plot
-
+# save the race group line plot ----
 ggplot2::ggsave(
   filename = "race_group_line_plot.png",
   plot = race_group_line_plot,
@@ -654,8 +647,7 @@ ggplot2::ggsave(
 # Leading causes of injury ----
 ###_____________________________________________________________________________
 
-# leading causes of injury - cases
-
+# leading causes of injury - cases ----
 leading_causes_cases <- trauma_data_clean |>
   injury_case_count(Year, CAUSE_OF_INJURY_AR_1) |>
   dplyr::group_by(Year) |>
@@ -680,7 +672,7 @@ leading_causes_cases <- trauma_data_clean |>
     )
   )
 
-# leading causes of injury events
+# leading causes of injury events ----
 leading_causes_years <- trauma_data_clean |>
   injury_incident_count(Year, CAUSE_OF_INJURY_AR_1) |>
   dplyr::group_by(Year) |>
@@ -705,19 +697,17 @@ leading_causes_years <- trauma_data_clean |>
     )
   )
 
-# for printing
-
+# for printing ----
 leading_causes_recent <- leading_causes_years |>
   dplyr::filter(Year %in% 2023:2024)
 
-# get color order
+# get color order ----
 legend_order = leading_causes_years |>
   dplyr::filter(Year > 2020, Year < 2024) |>
   dplyr::distinct(CAUSE_OF_INJURY_AR_1) |>
   dplyr::pull()
 
-# plot of leading causes by year
-
+# plot of leading causes by year ----
 leading_causes_plot <- leading_causes_years |>
   ggplot2::ggplot(ggplot2::aes(
     reorder(CAUSE_OF_INJURY_AR_1, -percent),
@@ -769,8 +759,7 @@ leading_causes_plot <- leading_causes_years |>
   ) +
   ggplot2::facet_wrap(~Year)
 
-# save the plot on leading causes
-
+# save the plot on leading causes ----
 ggplot2::ggsave(
   filename = "leading_causes_injury_years.png",
   plot = leading_causes_plot,
@@ -784,6 +773,7 @@ ggplot2::ggsave(
 # Falls ----
 ###_____________________________________________________________________________
 
+# fall related hospital vistis ----
 fall_related_cases <-
   trauma_data_clean |>
   dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
@@ -808,7 +798,7 @@ fall_related_cases <-
     )
   )
 
-
+# fall related injury events ----
 fall_related_injuries <-
   trauma_data_clean |>
   dplyr::distinct(Unique_Patient_ID, Incident_Date, .keep_all = TRUE) |>
@@ -833,11 +823,11 @@ fall_related_injuries <-
     )
   )
 
-
 ###_____________________________________________________________________________
 # Motor vehicle, boating, and air incidents ----
 ###_____________________________________________________________________________
 
+# MVC-related hospital visits ----
 motor_vehicle_related_cases <-
   trauma_data_clean |>
   dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
@@ -862,7 +852,7 @@ motor_vehicle_related_cases <-
     )
   )
 
-
+# MVC related injuries ----
 motor_vehicle_related_injuries <-
   trauma_data_clean |>
   dplyr::distinct(Unique_Patient_ID, Incident_Date, .keep_all = TRUE) |>
@@ -888,8 +878,7 @@ motor_vehicle_related_injuries <-
   )
 
 
-# table for motor vehicle injuries
-
+# table for motor vehicle injuries ----
 mvc_injury_transpose <-
   motor_vehicle_related_injuries |>
   dplyr::select(-increase_label) |>
@@ -919,8 +908,7 @@ mvc_injury_transpose <-
   dplyr::select(-c(`2020`, `2021`, `2022`))
 
 
-# create the table
-
+# create the table ----
 mvc_injury_table <-
   mvc_injury_transpose |>
   gt::gt() |>
@@ -954,19 +942,19 @@ gt::gtsave(
 # Reinjury ----
 ###_____________________________________________________________________________
 
-# patients
+# patients ----
 reinjuries_stats_patients <- trauma_data_clean |>
   reinjury_patient_count(Year, descriptive_stats = TRUE)
 
-# cases
+# cases ----
 reinjuries_stats_cases <- trauma_data_clean |>
   reinjury_case_count(Year, descriptive_stats = TRUE)
 
-# injury events
+# injury events ----
 reinjury_stats_injuries <- trauma_data_clean |>
   reinjury_injury_count(Year, descriptive_stats = TRUE)
 
-# create a gt() table to be explored in the report
+# create a gt() table to be explored in the report ----
 reinjury_stat_tbl_object <- reinjury_stats_injuries |>
   dplyr::select(-matches("_label")) |>
   tidyr::replace_na(list(change = 0)) |>
@@ -982,8 +970,7 @@ reinjury_stat_tbl_object <- reinjury_stats_injuries |>
   dplyr::ungroup() |>
   dplyr::select(-c(`2020`, `2021`, `2022`))
 
-# generate the gt() table
-
+# generate the gt() table ----
 reinjury_stat_tbl <-
   reinjury_stat_tbl_object |>
   dplyr::filter(Category %in% c("Reinjury", "n", "prop", "change")) |>
@@ -1035,6 +1022,7 @@ gt::gtsave(
 # work related ----
 ###_____________________________________________________________________________
 
+# work related hospital visits ----
 work_related_cases <-
   trauma_data_clean |>
   dplyr::mutate(
@@ -1059,7 +1047,7 @@ work_related_cases <-
     )
   )
 
-
+# work related injury events ----
 work_related_injuries <-
   trauma_data_clean |>
   dplyr::mutate(
@@ -1087,11 +1075,11 @@ work_related_injuries <-
     )
   )
 
-
 ###_____________________________________________________________________________
 # farm related ----
 ###_____________________________________________________________________________
 
+# farm-related hospital visits ----
 farm_related_cases <-
   trauma_data_clean |>
   dplyr::mutate(
@@ -1116,7 +1104,7 @@ farm_related_cases <-
     )
   )
 
-
+# farm-related injury events ----
 farm_related_injuries <-
   trauma_data_clean |>
   dplyr::mutate(
@@ -1141,13 +1129,11 @@ farm_related_injuries <-
     )
   )
 
-
 ###_____________________________________________________________________________
 # Intentionality ----
 ###_____________________________________________________________________________
 
-# source df
-
+# source df ----
 intentionality_of_injury <- trauma_data_clean |>
   tidyr::replace_na(list(INTENTIONALITY_1 = "Categorization Not Possible")) |>
   dplyr::distinct(Incident_Date, Unique_Patient_ID, .keep_all = TRUE) |>
@@ -1195,8 +1181,7 @@ intentionality_of_injury <- trauma_data_clean |>
   )
 
 
-# pivot the df for a gt() table
-
+# pivot the df for a gt() table ----
 intentionality_of_injury_pivot <- intentionality_of_injury |>
   tidyr::pivot_longer(
     cols = 2:length(intentionality_of_injury),
@@ -1215,8 +1200,7 @@ intentionality_of_injury_pivot <- intentionality_of_injury |>
   ) |>
   dplyr::select(-c(`2020`:`2022`))
 
-# develop the gt() table for intentionality of injury
-
+# develop the gt() table for intentionality of injury ----
 intentionality_of_injury_tbl <-
   intentionality_of_injury_pivot |>
   gt::gt() |>
@@ -1246,20 +1230,18 @@ intentionality_of_injury_tbl <-
   gt::row_group_order(groups = c("Counts", "Proportion and Change")) |>
   tab_style_hhs(border_cols = 2:4)
 
-# save the intentionality table
+# save the intentionality table ----
 gt::gtsave(
   data = intentionality_of_injury_tbl,
   filename = "intentionality_of_injury_tbl.png",
   path = plot_folder
 )
 
-
 ###_____________________________________________________________________________
 # Trauma activations ----
 ###_____________________________________________________________________________
 
-# source df
-
+# source df ----
 trauma_activation_cases <- trauma_data_clean |>
   dplyr::mutate(
     Trauma_Team_Activation_Level = dplyr::if_else(
@@ -1290,13 +1272,11 @@ trauma_activation_cases <- trauma_data_clean |>
   )
 
 
-# df for printing
-
+# df for printing ----
 trauma_activation_cases_recent <- trauma_activation_cases |>
   dplyr::filter(Year %in% 2023:2024)
 
-# overall activations
-
+# overall activations ----
 trauma_activation_cases_binary <- trauma_data_clean |>
   dplyr::mutate(
     Trauma_Team_Activation_Level = dplyr::if_else(
@@ -1342,8 +1322,7 @@ trauma_activation_cases_binary <- trauma_data_clean |>
   )
 
 
-# df for gt() table for overall trauma activation statistics
-
+# df for gt() table for overall trauma activation statistics ----
 trauma_activation_cases_binary_pivot <- trauma_activation_cases_binary |>
   dplyr::select(-tidyselect::matches("_label")) |>
   tidyr::pivot_longer(
@@ -1369,8 +1348,7 @@ trauma_activation_cases_binary_pivot <- trauma_activation_cases_binary |>
   dplyr::select(-c(`2020`, `2021`, `2022`))
 
 
-# df for gt() graphics for detailed table
-
+# df for gt() graphics for detailed table ----
 trauma_activation_cases_pivot <- trauma_activation_cases |>
   dplyr::select(-matches("label")) |>
   tidyr::pivot_wider(
@@ -1393,8 +1371,7 @@ trauma_activation_cases_pivot <- trauma_activation_cases |>
   dplyr::filter(Trauma_Team_Activation_Level != "Level 3")
 
 
-# gt() table for overall trauma activation stats
-
+# gt() table for overall trauma activation stats ----
 trauma_activation_cases_overall_tbl <-
   trauma_activation_cases_binary_pivot |>
   dplyr::mutate(
@@ -1425,7 +1402,7 @@ trauma_activation_cases_overall_tbl <-
   gt::row_group_order(groups = c("Counts", "Proportion and Change")) |>
   tab_style_hhs(border_cols = 2:4)
 
-# save the activations table
+# save the activations table ----
 gt::gtsave(
   data = trauma_activation_cases_overall_tbl,
   filename = "trauma_activation_cases_overall_tbl.png",
@@ -1433,8 +1410,7 @@ gt::gtsave(
 )
 
 
-# gt() table for detailed trauma team activation statistics
-
+# gt() table for detailed trauma team activation statistics ----
 trauma_activation_cases_tbl <-
   trauma_activation_cases_pivot |>
   gt::gt() |>
@@ -1467,7 +1443,7 @@ trauma_activation_cases_tbl <-
   gt::row_group_order(groups = c("Activation", "Non-Activation")) |>
   tab_style_hhs(border_cols = matches("n_\\d|trend"))
 
-# save the TTA trends table
+# save the TTA trends table ----
 gt::gtsave(
   data = trauma_activation_cases_tbl,
   filename = "trauma_activation_cases_tbl.png",
@@ -1485,8 +1461,7 @@ gt::gtsave(
 # Calculate the Executive Summary EMS data ----
 ###_____________________________________________________________________________
 
-# Get unique count of incidents
-
+# Get unique count of incidents ----
 ems_incidents <- ems_data_clean |>
   dplyr::filter(Scene_First_EMS_Unit_On_Scene == "Yes") |>
   dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
@@ -1502,8 +1477,7 @@ ems_incidents <- ems_data_clean |>
   )
 
 
-# get a unique count of total resources used
-
+# get a unique count of total resources used ----
 ems_runs <- ems_data_clean |>
   dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
   dplyr::count(Year, name = "Runs") |>
@@ -1517,20 +1491,19 @@ ems_runs <- ems_data_clean |>
   )
 
 
-# bind columns of the incidents and runs table
-
+# bind columns of the incidents and runs table ----
 ems_incidents_runs <- ems_incidents |>
   dplyr::left_join(ems_runs, by = "Year") |>
   dplyr::mutate(incident_run_ratio = Runs / Incidents)
 
-# ems incidents for printing
+# ems incidents for printing ----
 ems_incidents_runs_recent <- ems_incidents_runs |>
   dplyr::filter(Year %in% 2023:2024)
 
-# Get All Transports count by filtering Disposition Incident Patient Disposition by only values in disposition_incident_patient_disposition
+# Get All Transports count by filtering Disposition Incident Patient Disposition
+# by only values in disposition_incident_patient_disposition ----
 
-# transport incidents
-
+# transport incidents ----
 transport_incidents <- ems_data_clean |>
   dplyr::filter(Scene_First_EMS_Unit_On_Scene == "Yes") |>
   dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
@@ -1547,8 +1520,7 @@ transport_incidents <- ems_data_clean |>
   )
 
 
-# transport runs
-
+# transport runs ----
 transport_runs <- ems_data_clean |>
   dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
   dplyr::count(Year, Patient_Transported) |>
@@ -1563,8 +1535,7 @@ transport_runs <- ems_data_clean |>
   )
 
 
-# join the transport runs and incidents table
-
+# join the transport runs and incidents table ----
 transport_incidents_runs <- transport_incidents |>
   dplyr::rename(Transport_Incidents = n) |>
   dplyr::left_join(
@@ -1573,13 +1544,11 @@ transport_incidents_runs <- transport_incidents |>
   ) |>
   dplyr::select(-Patient_Transported)
 
-# transports for printing
-
+# transports for printing ----
 transport_incidents_runs_recent <- transport_incidents_runs |>
   dplyr::filter(Year %in% 2023:2024)
 
-# Get trauma related ems responses
-
+# Get trauma related ems responses ----
 ems_trauma_incidents <- ems_data_clean |>
   dplyr::filter(
     Trauma_Flag == "Yes",
@@ -1594,8 +1563,7 @@ ems_trauma_incidents <- ems_data_clean |>
   )
 
 
-# Get n trauma runs
-
+# Get n trauma runs ----
 ems_trauma_runs <- ems_data_clean |>
   dplyr::filter(Trauma_Flag == "Yes") |>
   dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
@@ -1606,18 +1574,15 @@ ems_trauma_runs <- ems_data_clean |>
   )
 
 
-# ems trauma join incidents and runs
-
+# ems trauma join incidents and runs ----
 ems_trauma_incidents_runs <- ems_trauma_incidents |>
   dplyr::left_join(ems_trauma_runs, by = "Year")
 
-# ems trauma stats for printing
-
+# ems trauma stats for printing ----
 ems_trauma_incidents_runs_recent <- ems_trauma_incidents_runs |>
   dplyr::filter(Year %in% 2023:2024)
 
-# Get trauma related ems transport runs
-
+# Get trauma related ems transport runs ----
 ems_trauma_transport_incidents <- ems_data_clean |>
   dplyr::filter(
     Trauma_Flag == "Yes",
@@ -1643,8 +1608,7 @@ ems_trauma_transport_incidents <- ems_data_clean |>
   )
 
 
-# Get trauma related ems transport incidents
-
+# Get trauma related ems transport incidents ----
 ems_trauma_transport_runs <- ems_data_clean |>
   dplyr::filter(Trauma_Flag == "Yes") |>
   dplyr::distinct(Unique_Run_ID, .keep_all = TRUE) |>
@@ -1666,8 +1630,7 @@ ems_trauma_transport_runs <- ems_data_clean |>
   )
 
 
-# join the ems trauma transport incident and runs tables
-
+# join the ems trauma transport incident and runs tables ----
 ems_trauma_transport_incidents_runs <- ems_trauma_transport_incidents |>
   dplyr::rename(Trauma_Transport_Incidents = n) |>
   dplyr::left_join(
@@ -1677,7 +1640,6 @@ ems_trauma_transport_incidents_runs <- ems_trauma_transport_incidents |>
   ) |>
   dplyr::select(-Patient_Transported)
 
-# trauma transports for printing
-
+# trauma transports for printing ----
 ems_trauma_transport_incidents_runs_recent <- ems_trauma_transport_incidents_runs |>
   dplyr::filter(Year %in% 2023:2024)

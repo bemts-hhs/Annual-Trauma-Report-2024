@@ -10,124 +10,149 @@
 # Plots for the death data ----
 ###_____________________________________________________________________________
 
-# top 10 causes of death in the US
+# top 10 causes of death in the US ----
 top_10_causes_us_plot <- death_cdc_wonder_nation_all_2019_2023_aggregate |>
   dplyr::mutate(
-    y_label_push = dplyr::if_else(
-      Deaths >= 3100000,
-      185000,
-      dplyr::if_else(
-        Deaths >= 1000000,
-        115000,
-        dplyr::if_else(
-          Deaths >= 500000,
-          250000,
-          dplyr::if_else(Deaths >= 100000, Deaths + 250000, 100000)
-        )
+    name = gsub(
+      x = `UCD - 15 Leading Causes of Death`,
+      pattern = "(nt|se|sm)s\\b",
+      replacement = "\\1",
+      perl = TRUE,
+      ignore.case = TRUE
+    ),
+    name = gsub(
+      pattern = "(chron)ic",
+      x = name,
+      ignore.case = TRUE,
+      perl = TRUE,
+      replacement = "\\1\\."
+    ),
+    name = gsub(
+      pattern = "(resp)iratory",
+      x = name,
+      replacement = "\\1\\.",
+      ignore.case = TRUE,
+      perl = TRUE
+    ),
+    name = ifelse(
+      grepl(
+        pattern = "nephritis",
+        x = name,
+        ignore.case = TRUE
+      ),
+      "Nephritis, nephrosis, etc.",
+      ifelse(
+        grepl(
+          pattern = "liver\\sdisease",
+          x = name,
+          ignore.case = TRUE
+        ),
+        "Chron. liver disease/cirrhosis",
+        name
       )
     )
   ) |>
   ggplot2::ggplot(ggplot2::aes(
     x = reorder(
-      stringr::str_wrap(`UCD - 15 Leading Causes of Death`, width = 20),
+      name,
       Deaths
     ),
     y = Deaths,
     fill = Deaths,
-    label = traumar::pretty_number(Deaths, n_decimal = 1)
+    label = traumar::pretty_number(Deaths, n_decimal = 2)
   )) +
-  ggplot2::geom_col(position = ggplot2::position_dodge2(width = 0.5)) +
-  ggplot2::geom_text(
-    ggplot2::aes(
-      y = y_label_push
-    ),
-    color = dplyr::if_else(
-      death_cdc_wonder_nation_all_2019_2023_aggregate$Deaths < 500000,
-      "gray",
-      "white"
-    ),
-    family = "Work Sans",
-    fontface = "bold",
-    size = 8
+  ggplot2::geom_col(
+    position = ggplot2::position_dodge2(width = 0.5),
+    width = 0.75
   ) +
   ggplot2::annotate(
     geom = "segment",
-    x = "Accidents",
-    xend = "Accidents",
-    y = 1600000,
-    yend = 1300000,
+    x = "Accident",
+    xend = "Accident",
+    y = 1500000,
+    yend = 1100000,
     arrow = ggplot2::arrow(type = "closed")
   ) +
   ggplot2::coord_flip() +
   ggplot2::labs(
     x = "",
     y = "",
-    title = "Top 10 Causes of Death Among All Age Groups in the U.S.",
-    subtitle = "Source: CDC WONDER | 2020-2024",
-    caption = "Note: 2023 data used in this report via CDC WONDER are complete.",
-    fill = "# Deaths"
   ) +
   ggplot2::guides(color = "none") +
-  ggplot2::scale_y_continuous(
-    labels = function(x) traumar::pretty_number(x, n_decimal = 2)
-  ) +
+  ggplot2::scale_y_continuous(labels = function(x) traumar::pretty_number(x)) +
   paletteer::scale_fill_paletteer_c(
     palette = "ggthemes::Orange-Gold",
     direction = 1,
-    labels = function(x) traumar::pretty_number(x, n_decimal = 1)
+    labels = function(x) traumar::pretty_number(x)
   ) +
   traumar::theme_cleaner(
-    base_size = 15,
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1,
+    base_size = 30,
     legend_position = "inside",
     legend.position.inside = c(0.75, 0.25)
   )
 
-# save the top causes of death in the US plot
-
+# save the top causes of death in the US plot ----
 ggplot2::ggsave(
   filename = "top_10_causes_us_plot.png",
   plot = top_10_causes_us_plot,
   path = plot_folder,
-  height = 9,
-  width = 9 * (16 / 9)
+  height = 7,
+  width = 7 * 1.78
 )
 
-# gt() tbl of deaths among 1-44 age population in the U.S.
+# gt() tbl of deaths among 1-44 age population in the U.S. ----
 death_cdc_wisqars_all_1_44_tbl <- death_cdc_wonder_nation_1_44_2019_2023_aggregate |>
+  dplyr::slice_max(Deaths, n = 5) |>
+  dplyr::mutate(
+    name = gsub(
+      x = `UCD - 15 Leading Causes of Death`,
+      pattern = "(nt|se|sm)s\\b",
+      replacement = "\\1",
+      perl = TRUE,
+      ignore.case = TRUE
+    ),
+    name = gsub(
+      pattern = "(chron)ic",
+      x = name,
+      ignore.case = TRUE,
+      perl = TRUE,
+      replacement = "\\1\\."
+    ),
+    name = gsub(
+      pattern = "(resp)iratory",
+      x = name,
+      replacement = "\\1\\.",
+      ignore.case = TRUE,
+      perl = TRUE
+    ),
+    name = ifelse(
+      grepl(
+        pattern = "nephritis",
+        x = name,
+        ignore.case = TRUE
+      ),
+      "Nephritis, nephrosis, etc.",
+      ifelse(
+        grepl(
+          pattern = "liver\\sdisease",
+          x = name,
+          ignore.case = TRUE
+        ),
+        "Chron. liver disease/cirrhosis",
+        name
+      )
+    ),
+    .before = 1
+  ) |>
   dplyr::select(
-    -matches("crude|population|code"),
-    `UCD - 15 Leading Causes of Death`,
+    -matches("ucd|crude|population|code"),
+    name,
     Deaths,
     `Age Adjusted Rate`,
     `Age Adjusted Rate Lower 95% Confidence Interval`,
     `Age Adjusted Rate Upper 95% Confidence Interval`
   ) |>
   gt::gt() |>
-  gt::tab_header(
-    title = "Top 10 Causes of Death Among Persons Ages 1-44 in the U.S.",
-    subtitle = "Source: CDC WONDER | 2020-2024"
-  ) |>
-  gt::tab_source_note(
-    source_note = gt::md(paste0(
-      fontawesome::fa("magnifying-glass"),
-      " 2024 Data included here are provisional."
-    ))
-  ) |>
-  gt::tab_source_note(
-    source_note = gt::md(paste0(
-      fontawesome::fa("sticky-note"),
-      " Injuries remain in the leading causes of death for the years 2020-2024 in the U.S."
-    ))
-  ) |>
-  gt::tab_footnote(
-    footnote = "Rate per 100,000 population.",
-    locations = gt::cells_column_labels(columns = `Age Adjusted Rate`)
-  ) |>
-  gt::opt_footnote_marks(marks = "standard") |>
   gt::fmt_number(columns = Deaths, drop_trailing_zeros = TRUE) |>
   gtExtras::gt_duplicate_column(
     column = `Age Adjusted Rate`,
@@ -136,9 +161,9 @@ death_cdc_wisqars_all_1_44_tbl <- death_cdc_wonder_nation_1_44_2019_2023_aggrega
   ) |>
   gtExtras::gt_plt_bar(column = Rate_Bar, color = "coral") |>
   gt::cols_label(
-    `Age Adjusted Rate` = "Age Adjusted Rate (95% CI)",
-    Rate_Bar = "",
-    `UCD - 15 Leading Causes of Death` = "Cause of Death"
+    `Age Adjusted Rate` ~ "Age Adjusted Rate (95% CI)",
+    Rate_Bar ~ "",
+    name ~ "Cause of Death"
   ) |>
   gt::cols_merge(
     columns = c(
@@ -148,9 +173,14 @@ death_cdc_wisqars_all_1_44_tbl <- death_cdc_wonder_nation_1_44_2019_2023_aggrega
     ),
     pattern = "{1} ({2}&mdash;{3})"
   ) |>
-  tab_style_hhs(border_cols = c(Deaths, `Age Adjusted Rate`))
+  gt::cols_hide(columns = `Age Adjusted Rate Standard Error`) |>
+  tab_style_hhs(
+    border_cols = c(Deaths, `Age Adjusted Rate`),
+    column_labels = 18,
+    body = 16
+  )
 
-# save the gt table
+# save the gt table for deaths ages 1-44 US ----
 gt::gtsave(
   data = death_cdc_wisqars_all_1_44_tbl,
   filename = "death_cdc_wisqars_all_1_44_tbl.png",
@@ -159,68 +189,197 @@ gt::gtsave(
 
 # top 5 causes of death in Iowa
 top_5_causes_iowa_plot <- death_cdc_wonder_iowa_all_2023 |>
+  dplyr::slice_max(Deaths, n = 5) |>
+  dplyr::mutate(
+    name = gsub(
+      x = `UCD - 15 Leading Causes of Death`,
+      pattern = "(nt|se|sm)s\\b",
+      replacement = "\\1",
+      perl = TRUE,
+      ignore.case = TRUE
+    ),
+    name = gsub(
+      pattern = "(chron)ic",
+      x = name,
+      ignore.case = TRUE,
+      perl = TRUE,
+      replacement = "\\1\\."
+    ),
+    name = gsub(
+      pattern = "(resp)iratory",
+      x = name,
+      replacement = "\\1\\.",
+      ignore.case = TRUE,
+      perl = TRUE
+    ),
+    name = ifelse(
+      grepl(
+        pattern = "nephritis",
+        x = name,
+        ignore.case = TRUE
+      ),
+      "Nephritis, nephrosis, etc.",
+      ifelse(
+        grepl(
+          pattern = "liver\\sdisease",
+          x = name,
+          ignore.case = TRUE
+        ),
+        "Chron. liver disease/cirrhosis",
+        name
+      )
+    ),
+    .before = 1
+  ) |>
   dplyr::slice_head(n = 5) |>
   ggplot2::ggplot(ggplot2::aes(
     x = reorder(
-      stringr::str_wrap(`UCD - 15 Leading Causes of Death`, width = 10),
+      stringr::str_wrap(name, width = 10),
       -Deaths
     ),
     y = Deaths,
     fill = Deaths,
-    label = traumar::pretty_number(Deaths)
+    label = traumar::pretty_number(x = Deaths, n_decimal = 2)
   )) +
   ggplot2::geom_col(
     width = 0.75,
     position = ggplot2::position_dodge(width = 1)
   ) +
-  ggplot2::geom_text(
+  ggrepel::geom_text_repel(
+    direction = "y",
+    nudge_y = ifelse(
+      grepl(
+        pattern = "heart",
+        x = death_cdc_wonder_iowa_all_2023$`UCD - 15 Leading Causes of Death`,
+        ignore.case = TRUE
+      ),
+      300,
+      10
+    ),
     family = "Work Sans",
-    size = 8,
+    size = 15,
     fontface = "bold",
-    nudge_y = 200
+    seed = 10232015,
+    segment.color = "transparent"
   ) +
   ggplot2::annotate(
     geom = "segment",
-    x = stringr::str_wrap("Accidents", width = 10),
-    xend = stringr::str_wrap("Accidents", width = 10),
+    x = stringr::str_wrap("Accident", width = 10),
+    xend = stringr::str_wrap("Accident", width = 10),
     y = 3500,
-    yend = 2300,
+    yend = 2700,
     arrow = ggplot2::arrow(type = "closed")
-  ) +
-  ggplot2::labs(
-    x = "",
-    y = "",
-    title = "Top 5 Causes of Death in Iowa Among All Age Groups",
-    subtitle = "Source: Iowa Death Certificate Data | 2023"
   ) +
   paletteer::scale_fill_paletteer_c(
     palette = "ggthemes::Orange-Gold",
     direction = 1,
     labels = function(x) traumar::pretty_number(x)
   ) +
+  ggplot2::labs(x = "", y = "") +
   traumar::theme_cleaner(
-    base_size = 15,
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1,
+    base_size = 30,
     axis.text.y = ggplot2::element_blank(),
     legend_position = "inside",
-    legend.position.inside = c(0.75, 0.75),
-    facets = TRUE
+    legend.position.inside = c(0.75, 0.75)
   )
 
-# save the top 10 causes of death in Iowa plot
-
+# save the top 10 causes of death in Iowa plot ----
 ggplot2::ggsave(
   filename = "top_5_causes_iowa_plot.png",
   plot = top_5_causes_iowa_plot,
   path = plot_folder,
-  height = 6,
-  width = 8
+  height = 8.1,
+  width = 8.1 * 1.78
 )
 
-# Iowa trauma deaths by intentionality
+# gt() tbl of deaths among 1-44 age population in the U.S. ----
+death_cdc_wisqars_ia_1_44_tbl <- death_cdc_wonder_iowa_1_44_2019_2023_aggregate |>
+  dplyr::slice_max(Deaths, n = 5) |>
+  dplyr::mutate(
+    name = gsub(
+      x = `UCD - 15 Leading Causes of Death`,
+      pattern = "(nt|se|sm)s\\b",
+      replacement = "\\1",
+      perl = TRUE,
+      ignore.case = TRUE
+    ),
+    name = gsub(
+      pattern = "(chron)ic",
+      x = name,
+      ignore.case = TRUE,
+      perl = TRUE,
+      replacement = "\\1\\."
+    ),
+    name = gsub(
+      pattern = "(resp)iratory",
+      x = name,
+      replacement = "\\1\\.",
+      ignore.case = TRUE,
+      perl = TRUE
+    ),
+    name = ifelse(
+      grepl(
+        pattern = "nephritis",
+        x = name,
+        ignore.case = TRUE
+      ),
+      "Nephritis, nephrosis, etc.",
+      ifelse(
+        grepl(
+          pattern = "liver\\sdisease",
+          x = name,
+          ignore.case = TRUE
+        ),
+        "Chron. liver disease/cirrhosis",
+        name
+      )
+    ),
+    .before = 1
+  ) |>
+  dplyr::select(
+    -matches("ucd|crude|population|code"),
+    name,
+    Deaths,
+    `Age Adjusted Rate`,
+    `Age Adjusted Rate Lower 95% Confidence Interval`,
+    `Age Adjusted Rate Upper 95% Confidence Interval`
+  ) |>
+  gt::gt() |>
+  gt::fmt_number(columns = Deaths, drop_trailing_zeros = TRUE) |>
+  gtExtras::gt_duplicate_column(
+    column = `Age Adjusted Rate`,
+    after = `Age Adjusted Rate`,
+    dupe_name = "Rate_Bar"
+  ) |>
+  gtExtras::gt_plt_bar(column = Rate_Bar, color = "coral") |>
+  gt::cols_label(
+    `Age Adjusted Rate` ~ "Age Adjusted Rate (95% CI)",
+    Rate_Bar ~ "",
+    name ~ "Cause of Death"
+  ) |>
+  gt::cols_merge(
+    columns = c(
+      `Age Adjusted Rate`,
+      `Age Adjusted Rate Lower 95% Confidence Interval`,
+      `Age Adjusted Rate Upper 95% Confidence Interval`
+    ),
+    pattern = "{1} ({2}&mdash;{3})"
+  ) |>
+  gt::cols_hide(columns = `Age Adjusted Rate Standard Error`) |>
+  tab_style_hhs(
+    border_cols = c(Deaths, `Age Adjusted Rate`),
+    column_labels = 18,
+    body = 16
+  )
+
+# save the gt table for deaths ages 1-44 Iowa ----
+gt::gtsave(
+  data = death_cdc_wisqars_ia_1_44_tbl,
+  filename = "death_cdc_wisqars_ia_1_44_tbl.png",
+  path = plot_folder
+)
+
+# Iowa trauma deaths by intentionality ----
 iowa_deaths_intentionality_plot <- iowa_deaths_intentionality |>
   dplyr::mutate(
     Intentionality = stringr::str_remove_all(
