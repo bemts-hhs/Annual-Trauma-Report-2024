@@ -14,7 +14,11 @@ ipop_data_clean <- ipop_data_clean |>
 ipop_longitudinal_cases <- ipop_data_clean |>
   ipop_case_count(Year, which = "Inpatient", descriptive_stats = TRUE) |>
   dplyr::select(-prop_label) |>
-  dplyr::rename(`Total Cases` = n, `% Change in Cases` = prop_change) |>
+  dplyr::rename(
+    `Total Cases` = n,
+    Change = change,
+    `% Change in Cases` = prop_change
+  ) |>
   tidyr::pivot_longer(
     cols = `Total Cases`:`% Change in Cases`,
     names_to = "Category",
@@ -42,7 +46,11 @@ ipop_longitudinal_cases <- ipop_data_clean |>
 ipop_longitudinal_patients <- ipop_data_clean |>
   ipop_patient_count(Year, which = "Inpatient", descriptive_stats = TRUE) |>
   dplyr::select(-prop_label) |>
-  dplyr::rename(`Total Pts.` = n, `% Change in Pts.` = prop_change) |>
+  dplyr::rename(
+    `Total Pts.` = n,
+    Change = change,
+    `% Change in Pts.` = prop_change
+  ) |>
   tidyr::pivot_longer(
     cols = `Total Pts.`:`% Change in Pts.`,
     names_to = "Category",
@@ -94,23 +102,11 @@ ipop_longitudinal_case_patient_tbl <- ipop_longitudinal_case_patient |>
   gt::tab_row_group(label = "Cases", rows = 1:3) |>
   gt::tab_row_group(label = "Patients", rows = 4:6) |>
   gt::row_group_order(groups = c("Cases", "Patients")) |>
-  gt::tab_source_note(
-    source_note = gt::md(
-      paste0(
-        fontawesome::fa("magnifying-glass"),
-        " Patients meeting trauma registry inclusionary criteria only"
-      )
-    )
-  ) |>
-  gt::tab_source_note(
-    source_note = gt::md(
-      paste0(
-        fontawesome::fa("sticky-note"),
-        " These data reflect inpatient cases from the IPOP database, only."
-      )
-    )
-  ) |>
-  tab_style_hhs(border_cols = `2023`:`2020-2024 Trend`)
+  tab_style_hhs(
+    border_cols = `2023`:`2020-2024 Trend`,
+    column_labels = 18,
+    body = 16
+  )
 
 # save the gt table ----
 gt::gtsave(
@@ -152,25 +148,16 @@ ipop_age_dist_bar <- ipop_age_dist |>
     fontface = "bold"
   ) +
   ggplot2::guides(fill = "none") +
-  ggplot2::labs(
-    title = "Age Distribution of Cases in the IPOP Database",
-    subtitle = "Source: Iowa Inpatient Outpatient Database | 2024",
-    caption = "Read the order of factors by changing color and box area, signaling decreasing count, from the bottom left to top right.\nThese data reflect inpatient cases from the IPOP database, only."
-  ) +
-  traumar::theme_cleaner(
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    base_size = 15,
-    vjust_title = 1.75,
-    vjust_subtitle = 1
-  ) +
+  traumar::theme_cleaner() +
   viridis::scale_fill_viridis(option = "rocket", direction = -1)
 
 # save the treemap
 ggplot2::ggsave(
   filename = "ipop_age_dist_bar.png",
   plot = ipop_age_dist_bar,
-  path = plot_folder
+  path = plot_folder,
+  height = 7,
+  width = 7 * 1.78
 )
 
 # IPOP nature of injury frequency ----
@@ -205,7 +192,11 @@ ipop_nature_injury_freq_plot <- ipop_nature_injury_freq |>
     ),
     y = mod,
     fill = mod,
-    label = traumar::pretty_number(n, n_decimal = 2)
+    label = ifelse(
+      n >= 6,
+      traumar::pretty_number(n, n_decimal = 2),
+      traumar::small_count_label(var = n, cutoff = 6, replacement = "*")
+    )
   )) +
   ggplot2::geom_col(position = "dodge2", show.legend = TRUE, alpha = 0.9) +
   # First segment: from the top of the bar to just before the text
@@ -253,28 +244,20 @@ ipop_nature_injury_freq_plot <- ipop_nature_injury_freq |>
       "white",
       "black"
     ),
-    size = 8
+    size = 15
   ) +
   ggplot2::coord_radial(clip = "off", inner.radius = 0.15) +
   ggplot2::labs(
-    x = "Nature of Injury Description\n",
+    x = "",
     y = "",
-    fill = stringr::str_wrap("Orange to blue High to low count", width = 15),
-    title = "Nature of Injury Frequency Among IPOP Trauma Cases",
-    subtitle = "Source: Iowa Inpatient Outpatient Database | 2024",
-    caption = "Note: Square-root transformation applied to the y-axis due to the 'Fracture' category outlier,\nthe labels are true case counts."
+    fill = stringr::str_wrap("Orange to blue High to low count", width = 15)
   ) +
   paletteer::scale_fill_paletteer_c(
     palette = "ggthemes::Orange-Blue Diverging",
     direction = -1
   ) +
   traumar::theme_cleaner(
-    base_size = 15,
-    base_background = "white",
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1,
+    base_size = 30,
     axis.text.y = ggplot2::element_blank(),
     legend_position = "right"
   ) +
@@ -291,8 +274,8 @@ ggplot2::ggsave(
   filename = "ipop_nature_injury_freq_plot.png",
   plot = ipop_nature_injury_freq_plot,
   path = plot_folder,
-  height = 9,
-  width = 9 * (16 / 9)
+  height = 15,
+  width = 15 * 1.78
 )
 
 # IPOP body region injury frequency table ----
@@ -345,18 +328,15 @@ ipop_body_region_plot <- ipop_body_region |>
   ggplot2::geom_col(position = "dodge2", width = 0.5) +
   ggplot2::geom_text(
     family = "Work Sans",
-    size = 8,
+    size = 15,
     color = c(rep("white", 2), rep("black", 4)),
     fontface = "bold",
-    nudge_y = c(-10, -15, 8, 8, 10, 8)
+    nudge_y = c(-15, -15, 9, 8, 10, 8)
   ) +
   #ylim(-1, 9.1) +
   ggplot2::labs(
     x = "",
     y = "",
-    title = "Body Region of Injury Frequency Among Trauma Cases",
-    subtitle = "Source: Iowa Inpatient Outpatient Database | 2024",
-    caption = "Note: Square-root transformation applied to the y-axis due to the 'Extremities' category outlier,\nthe labels are true case counts.",
     fill = stringr::str_wrap("Dark to light red High to low count", width = 19)
   ) +
   paletteer::scale_fill_paletteer_c(
@@ -365,12 +345,7 @@ ipop_body_region_plot <- ipop_body_region |>
   ) +
   ggplot2::coord_radial(start = 0, clip = "off") +
   traumar::theme_cleaner(
-    base_size = 15,
-    base_background = "white",
-    title_text_size = 20,
-    subtitle_text_size = 18,
-    vjust_title = 1.75,
-    vjust_subtitle = 1,
+    base_size = 30,
     axis.text.y = ggplot2::element_blank(),
     legend_position = "top"
   ) +
@@ -387,6 +362,6 @@ ggplot2::ggsave(
   filename = "ipop_body_region_plot.png",
   plot = ipop_body_region_plot,
   path = plot_folder,
-  height = 9,
-  width = 9 * (16 / 9)
+  height = 15,
+  width = 15 * 1.78
 )
