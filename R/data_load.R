@@ -151,27 +151,27 @@ trauma_data_2024 <- readr::read_csv(file = trauma_data_path_2024)
 trauma_data <- dplyr::bind_rows(
   trauma_data_2020 |>
     dplyr::mutate(dplyr::across(
-      .cols = tidyselect::matches("_zip$"),
+      .cols = tidyselect::matches("_zip$|_fips$"),
       ~ as.character(.)
     )),
   trauma_data_2021 |>
     dplyr::mutate(dplyr::across(
-      .cols = tidyselect::matches("_zip$"),
+      .cols = tidyselect::matches("_zip$|_fips$"),
       ~ as.character(.)
     )),
   trauma_data_2022 |>
     dplyr::mutate(dplyr::across(
-      .cols = tidyselect::matches("_zip$"),
+      .cols = tidyselect::matches("_zip$|_fips$"),
       ~ as.character(.)
     )),
   trauma_data_2023 |>
     dplyr::mutate(dplyr::across(
-      .cols = tidyselect::matches("_zip$"),
+      .cols = tidyselect::matches("_zip$|_fips$"),
       ~ as.character(.)
     )),
   trauma_data_2024 |>
     dplyr::mutate(dplyr::across(
-      .cols = tidyselect::matches("_zip$"),
+      .cols = tidyselect::matches("_zip$|_fips$"),
       ~ as.character(.)
     ))
 )

@@ -1607,7 +1607,6 @@ ems_trauma_transport_incidents <- ems_data_clean |>
     percent_trauma_total_transports = n / n_transports
   )
 
-
 # Get trauma related ems transport incidents ----
 ems_trauma_transport_runs <- ems_data_clean |>
   dplyr::filter(Trauma_Flag == "Yes") |>
