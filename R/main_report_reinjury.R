@@ -7,7 +7,6 @@
 ####
 
 # Get reinjured patient identifiers
-
 reinjured_patients <- trauma_2024 |>
   dplyr::distinct(Incident_Date, Unique_Patient_ID, .keep_all = TRUE) |>
   dplyr::mutate(
@@ -19,7 +18,6 @@ reinjured_patients <- trauma_2024 |>
 
 
 # df giving patients and their injury category
-
 injury_category_patients <- trauma_2024 |>
   dplyr::distinct(Incident_Date, Unique_Patient_ID, .keep_all = TRUE) |>
   dplyr::mutate(
@@ -40,9 +38,7 @@ injury_category_patients <- trauma_2024 |>
   dplyr::filter(!is.na(Unique_Patient_ID)) |>
   dplyr::distinct(Unique_Patient_ID, injury_category)
 
-
 # tidyr::complete df including reinjury category
-
 reinjured_trauma_2024 <- trauma_2024 |>
   dplyr::mutate(
     reinjured = dplyr::if_else(
@@ -110,18 +106,20 @@ ggplot2::ggsave(
 
 # table of reinjured patients and trend statistics
 reinjured_patients_tbl <- trauma_data_clean |>
-  reinjury_patient_count(descriptive_stats = TRUE)
+  reinjury_patient_count(Year, descriptive_stats = TRUE)
 
 # create the gt() table
 reinjured_patients_tbl_gt <- reinjured_patients_tbl |>
-  dplyr::filter(Year < 2024) |>
   dplyr::select(-matches("min|max|_label")) |>
   dplyr::rename(
-    `# Reinjured Pts.` = Reinjury,
-    `Total # Pts.` = n,
-    `Avg # Injury Events per Pt.` = Avg_Injuries,
+    `# Reinjured Pts.` = reinjured_patients,
+    `Total # Pts.` = n_patients,
     `% Change in Reinjured Pts.` = change,
-    `Proportion Reinjured Pts.` = prop
+    `Proportion Reinjured Pts.` = prop_reinjured
+  ) |>
+  dplyr::select(
+    Year:`% Change in Reinjured Pts.`,
+    `Proportion Reinjured Pts.`
   ) |>
   tidyr::pivot_longer(
     cols = `# Reinjured Pts.`:`Proportion Reinjured Pts.`,
@@ -136,15 +134,14 @@ reinjured_patients_tbl_gt <- reinjured_patients_tbl |>
   dplyr::mutate(
     `2020-2024 Trend` = list(c(
       `2020`,
-      `2019`,
-      `2020`,
       `2021`,
+      `2022`,
       `2023`,
       `2024`
     )),
     .by = Category
   ) |>
-  dplyr::select(Category, `2021`:`2020-2024 Trend`) |>
+  dplyr::select(Category, `2020`:`2020-2024 Trend`) |>
   gt::gt() |>
   gtExtras::gt_plt_sparkline(
     column = `2020-2024 Trend`,
@@ -153,19 +150,18 @@ reinjured_patients_tbl_gt <- reinjured_patients_tbl |>
     label = FALSE
   ) |>
   gt::fmt_number(rows = 1:3, drop_trailing_zeros = TRUE) |>
-  gt::fmt_percent(rows = 4:5, drop_trailing_zeros = TRUE) |>
+  gt::fmt_percent(rows = 4, drop_trailing_zeros = TRUE) |>
   gt::tab_row_group(label = "Counts", rows = 1:2) |>
-  gt::tab_row_group(label = "Proportion and Change", rows = 3:5) |>
+  gt::tab_row_group(label = "Proportion and Change", rows = 3:4) |>
   gt::row_group_order(groups = c("Counts", "Proportion and Change")) |>
   gt::tab_header(
     title = "Summary: Trend of Reinjured Patients in Iowa",
     subtitle = "Patients Seen at a Trauma Center | Data: iowa Trauma Registry 2020-2024"
   ) |>
-  tab_style_hhs(border_cols = `2021`:`2020-2024 Trend`)
+  tab_style_hhs(border_cols = `2020`:`2020-2024 Trend`)
 
 
 # gender reinjuries
-
 gender_reinjury_events_tbl <- reinjured_trauma_2024 |>
   dplyr::filter(!is.na(Unique_Patient_ID)) |>
   dplyr::distinct(Unique_Patient_ID, Patient_Gender, n_injury_cat) |>
@@ -200,7 +196,6 @@ missing_gender_reinjury <- gender_reinjury_events_tbl |>
 
 
 # plot gender reinjury patients
-
 gender_reinjury_events_plot <- gender_reinjury_events_tbl |>
   dplyr::filter(Patient_Gender %in% c("Male", "Female")) |>
   ggplot2::ggplot(ggplot2::aes(
@@ -263,9 +258,7 @@ ggplot2::ggsave(
 
 
 # race and reinjuries
-
 # patient count by race and injury count category
-
 race_reinjury_events_tbl <- reinjured_trauma_2024 |>
   dplyr::filter(!is.na(Unique_Patient_ID)) |>
   dplyr::distinct(Unique_Patient_ID, .keep_all = TRUE) |>
@@ -300,7 +293,6 @@ race_reinjury_events_tbl <- reinjured_trauma_2024 |>
   tidyr::replace_na(list(number_label = "*"))
 
 # totals by race of reinjury
-
 race_reinjury_events_tbl_totals <- reinjured_trauma_2024 |>
   dplyr::filter(!is.na(Unique_Patient_ID)) |>
   dplyr::distinct(Unique_Patient_ID, .keep_all = TRUE) |>
@@ -338,14 +330,12 @@ race_reinjury_events_tbl_totals <- reinjured_trauma_2024 |>
   tidyr::replace_na(list(number_label = "*"))
 
 # save this file to use for reporting
-
 readr::write_csv(
   x = race_reinjury_events_tbl_totals,
   file = output_folder
 )
 
 # overall patient population race statistics
-
 trauma_reg_race_pop_stats <- trauma_2024 |>
   dplyr::mutate(
     Patient_Race = case_when(
@@ -372,7 +362,6 @@ trauma_reg_race_pop_stats <- trauma_2024 |>
   )
 
 # save this file to use for reporting
-
 readr::write_csv(
   x = trauma_reg_race_pop_stats,
   file = output_folder
@@ -380,7 +369,6 @@ readr::write_csv(
 
 
 # create the reinjured pt count by race plot
-
 race_reinjury_events_plot <- race_reinjury_events_tbl |>
   dplyr::filter(Patient_Race != "Missing") |>
   ggplot2::ggplot(ggplot2::aes(
@@ -425,7 +413,6 @@ race_reinjury_events_plot <- race_reinjury_events_tbl |>
   )
 
 # save the reinjured pt count by race plot
-
 ggplot2::ggsave(
   filename = "race_reinjury_events_plot.png",
   plot = race_reinjury_events_plot,
@@ -434,9 +421,7 @@ ggplot2::ggsave(
 
 
 # age group and reinjury
-
 # patient count by age and injury count category
-
 age_reinjury_events_tbl <- reinjured_trauma_2024 |>
   dplyr::filter(!is.na(Unique_Patient_ID)) |>
   dplyr::distinct(Unique_Patient_ID, .keep_all = TRUE) |>
@@ -473,7 +458,6 @@ age_reinjury_events_tbl <- reinjured_trauma_2024 |>
   tidyr::replace_na(list(number_label = "*"))
 
 # totals by age and reinjury
-
 age_reinjury_events_tbl_totals <- reinjured_trauma_2024 |>
   dplyr::filter(!is.na(Unique_Patient_ID)) |>
   dplyr::distinct(Unique_Patient_ID, .keep_all = TRUE) |>
@@ -515,14 +499,12 @@ age_reinjury_events_tbl_totals <- reinjured_trauma_2024 |>
   tidyr::replace_na(list(number_label = "*"))
 
 # save this file to use for reporting
-
 readr::write_csv(
   x = age_reinjury_events_tbl_totals,
   file = output_folder
 )
 
 # overall patient population age statistics
-
 trauma_reg_age_pop_stats <- trauma_2024 |>
   dplyr::mutate(
     Age_Range = tidyr::replace_na(Age_Range, "Missing"),
@@ -551,15 +533,12 @@ trauma_reg_age_pop_stats <- trauma_2024 |>
   )
 
 # save this file to use for reporting
-
 readr::write_csv(
   x = trauma_reg_age_pop_stats,
   file = output_folder
 )
 
-
 # create the reinjured pt count by age plot
-
 age_reinjury_events_plot <- age_reinjury_events_tbl |>
   dplyr::filter(Age_Range != "Missing") |>
   ggplot2::ggplot(ggplot2::aes(
@@ -602,7 +581,6 @@ age_reinjury_events_plot <- age_reinjury_events_tbl |>
   ggplot2::ylim(0, 10)
 
 # save the reinjured pt count by race plot
-
 ggplot2::ggsave(
   filename = "age_reinjury_events_plot.png",
   plot = age_reinjury_events_plot,
@@ -615,10 +593,9 @@ ggplot2::ggsave(
 ###_____________________________________________________________________________
 
 # cause of injury among reinjured patients
-
 cause_of_injury_reinjury <- reinjured_trauma_2024 |>
   dplyr::filter(reinjured == T) |>
-  injury_incident_count(MECHANISM_1, sort = TRUE) |>
+  injury_incident_count(MECHANISM_1) |>
   tidyr::replace_na(list(MECHANISM_1 = "Missing")) |>
   dplyr::mutate(
     percent = n / sum(n),
@@ -628,13 +605,11 @@ cause_of_injury_reinjury <- reinjured_trauma_2024 |>
   )
 
 # df for plotting
-
 cause_of_injury_reinjury_complete <- cause_of_injury_reinjury |>
   dplyr::filter(MECHANISM_1 != "Missing") |>
   dplyr::slice_max(n, n = 15)
 
 # cause of injury among reinjured patients plot
-
 cause_of_injury_reinjury_plot <- cause_of_injury_reinjury_complete |>
   ggplot2::ggplot(ggplot2::aes(
     x = reorder(MECHANISM_1, mod),
@@ -644,11 +619,11 @@ cause_of_injury_reinjury_plot <- cause_of_injury_reinjury_complete |>
   )) +
   ggplot2::geom_col(color = "black", width = 0.75) +
   ggplot2::geom_text(
-    nudge_y = dplyr::if_else(
-      cause_of_injury_reinjury$n > 1000,
-      -cause_of_injury_reinjury$n + 75,
-      30
-    ),
+    # nudge_y = dplyr::if_else(
+    #   cause_of_injury_reinjury$n > 1000,
+    #   -cause_of_injury_reinjury$n + 75,
+    #   30
+    # ),
     size = 8,
     family = "Work Sans",
     color = dplyr::if_else(
@@ -666,7 +641,7 @@ cause_of_injury_reinjury_plot <- cause_of_injury_reinjury_complete |>
     caption = "Top mechanisms of injury shown and their injury event counts",
     fill = "Higher count gives\ndarker color"
   ) +
-  ggplot2::scale_fill_viridis(option = "viridis", direction = -1) +
+  viridis::scale_fill_viridis(option = "viridis", direction = -1) +
   traumar::theme_cleaner(
     base_size = 15,
     title_text_size = 20,
@@ -728,8 +703,8 @@ urbanicity_reinjury_plot <- reinjured_trauma_2024 |>
     title = "Proportions of Reinjured Patients by Urban/Rural Patient County",
     subtitle = "Source: Iowa ImageTrend Patient Registry | 2024"
   ) +
-  ggplot2::scale_y_continuous(labels = label_percent()) +
-  ggplot2::scale_fill_paletteer_d(
+  ggplot2::scale_y_continuous(labels = scales::label_percent()) +
+  paletteer::scale_fill_paletteer_d(
     palette = "colorblindr::OkabeIto_black",
     direction = 1
   ) +
@@ -802,11 +777,9 @@ urbanicity_reinjury_props <- reinjured_trauma_2024 |>
     alternative = "two-sided",
     correct = FALSE
   ) |>
-  traumar::stat_sig(p_val_col = p_value)
-
+  dplyr::mutate(significance = traumar::stat_sig(p_val_data = p_value))
 
 # test alt hypothesis that the proportions of Iowans that are reinjured are different between urban / rural settings
-
 urbanicity_reinjury_model <- reinjured_trauma_2024 |>
   tidyr::replace_na(list(Designation_Patient = "Missing")) |>
   dplyr::filter(Designation_Patient != "Missing") |>
@@ -820,9 +793,7 @@ urbanicity_reinjury_model <- reinjured_trauma_2024 |>
   infer::generate(reps = 1000, type = "permute") |>
   infer::calculate(stat = "diff in props", order = c("Urban", "Rural"))
 
-
 # get critical values
-
 urbanicity_reinjury_crit <- urbanicity_reinjury_model |>
   calculate_critical_values(stat_col = stat, alpha = 0.05)
 
@@ -853,7 +824,7 @@ urbanicity_reinjury_diff_plot <- urbanicity_reinjury_model_mod |>
     )
   )) +
   ggplot2::geom_histogram(
-    ggplot2::aes(y = after_stat(density)),
+    ggplot2::aes(y = ggplot2::after_stat(density)),
     bins = 15,
     fill = "lightgray",
     color = "black",
@@ -874,7 +845,7 @@ urbanicity_reinjury_diff_plot <- urbanicity_reinjury_model_mod |>
   ) +
   ggplot2::geom_area(
     data = density_df |> dplyr::filter(x >= upper_crit),
-    aes(x = x, y = y),
+    ggplot2::aes(x = x, y = y),
     fill = "coral1",
     alpha = 0.5
   ) +
