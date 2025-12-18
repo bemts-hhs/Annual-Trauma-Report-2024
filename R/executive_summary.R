@@ -194,7 +194,6 @@ gt::gtsave(
   path = plot_folder
 )
 
-
 ###_____________________________________________________________________________
 # Transfers and transfer delay ----
 ###_____________________________________________________________________________
@@ -259,16 +258,16 @@ transfer_delays_2024 <- trauma_data_clean |>
 # get gender data ----
 gender_group <- trauma_data_clean |>
   dplyr::filter(Year %in% 2023:2024) |>
-  injury_incident_count(Year, Patient_Gender) |>
-  tidyr::replace_na(list(Patient_Gender = "Missing")) |>
-  dplyr::mutate(Proportion = (n / sum(n)) * 100, .by = Year) |>
   dplyr::mutate(
     Patient_Gender = dplyr::if_else(
       grepl(pattern = "not", x = Patient_Gender, ignore.case = TRUE),
       "Missing",
       Patient_Gender
     )
-  )
+  ) |>
+  tidyr::replace_na(list(Patient_Gender = "Missing")) |>
+  injury_incident_count(Year, Patient_Gender) |>
+  dplyr::mutate(Proportion = (n / sum(n)) * 100, .by = Year)
 
 # create a table visualization using gt() ----
 gender_group_tbl <-
@@ -1180,7 +1179,6 @@ intentionality_of_injury <- trauma_data_clean |>
       dplyr::lag(`Unintentional Injury Events`)
   )
 
-
 # pivot the df for a gt() table ----
 intentionality_of_injury_pivot <- intentionality_of_injury |>
   tidyr::pivot_longer(
@@ -1408,7 +1406,6 @@ gt::gtsave(
   filename = "trauma_activation_cases_overall_tbl.png",
   path = plot_folder
 )
-
 
 # gt() table for detailed trauma team activation statistics ----
 trauma_activation_cases_tbl <-

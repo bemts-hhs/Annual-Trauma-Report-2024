@@ -829,7 +829,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
       out <- temp |>
         dplyr::summarize(
           reinjured_patients = sum(reinjury, na.rm = TRUE),
-          .by = grouping_vars
+          .by = dplyr::all_of(grouping_vars)
         )
 
       cli::cli_alert_success(
@@ -843,7 +843,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
     stat <- temp |>
       dplyr::summarize(
         n = sum(reinjury, na.rm = TRUE),
-        .by = grouping_vars
+        .by = dplyr::all_of(grouping_vars)
       )
 
     # Descriptive statistics on the counts
@@ -955,7 +955,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
         Total_cases = dplyr::n(), # all cases (including non-reinjured)
         prop = Reinjury_cases / Total_cases, # proportion of cases that are reinjury cases
         prop_label = traumar::pretty_percent(prop, n_decimal = 2),
-        .by = grouping_vars
+        .by = dplyr::all_of(grouping_vars)
       ) |>
       dplyr::mutate(
         # Year-over-year proportional change in reinjury cases
@@ -1005,7 +1005,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
         dplyr::filter(reinjury) |>
         dplyr::summarize(
           Reinjury = sum(n, na.rm = TRUE), # sum of injury events for reinjured patients
-          .by = grouping_vars
+          .by = dplyr::all_of(grouping_vars)
         )
 
       cli::cli_alert_success(
@@ -1029,7 +1029,7 @@ summarize_reinjury_stats <- function(df, grouping_vars = grouping_vars) {
       dplyr::filter(reinjury) |>
       dplyr::summarize(
         Reinjury = sum(n, na.rm = TRUE),
-        .by = grouping_vars
+        .by = dplyr::all_of(grouping_vars)
       )
 
     # Step 3: Overall injury event counts per year (from original data)
